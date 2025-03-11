@@ -1,0 +1,20 @@
+
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:ns2="http://a9.com/-/spec/opensearch/1.1/" xmlns:ns3="http://www.w3.org/1999/xhtml">
+    <id>9b092b55-0a2b-37b8-9110-a7af8f947be6</id>
+    <updated>2024-11-29T03:20:30.000+03:00</updated>
+    <title type="text">ProcessedMetrics</title>
+    <subtitle type="text">ManagedSystem 9b092b55-0a2b-37b8-9110-a7af8f947be6</subtitle>
+    <link rel="self" href="https://10.34.2.110:12443/rest/api/pcm/ManagedSystem/9b092b55-0a2b-37b8-9110-a7af8f947be6/ProcessedMetrics?Type=Energy"/>
+    <generator uri="IBM Power Systems Management Console" version="1"/>
+    <entry>
+        <id>590e5c6e-7d39-44d4-85cf-98b1823ca302</id>
+        <updated>2024-11-29T03:20:30.000+03:00</updated>
+        <title type="text">EnergyMetrics_ManagedSystem_9b092b55-0a2b-37b8-9110-a7af8f947be6_20241129T012130+0300_20241129T032030+0300_30.json</title>
+        <published>2024-11-29T01:21:30.000+03:00</published>
+        <link type="application/json" href="https://10.34.2.110:12443/rest/api/pcm/ProcessedMetrics/EnergyMetrics_ManagedSystem_9b092b55-0a2b-37b8-9110-a7af8f947be6_20241129T012130+0300_20241129T032030+0300_30.json"/>
+        <author>
+            <name>IBM Power Systems Management Console</name>
+        </author>
+        <category term="ManagedSystem" frequency="30"/>
+    </entry>
+</feed>
