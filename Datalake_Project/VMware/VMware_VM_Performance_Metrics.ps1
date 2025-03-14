@@ -188,5 +188,5 @@ $output | ForEach-Object {
     "UUID: $($_.UUID)"
     "BootTime: $($_.BootTime)"
     ""
-} | Tee-Object -FilePath "/nifiScripts/vm15MinSummary.txt" -Encoding utf8
+} | Tee-Object -FilePath "/Datalake_Project/vm15MinSummary.txt" -Encoding utf8
 

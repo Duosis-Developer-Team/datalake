@@ -201,4 +201,4 @@ $output | ForEach-Object {
 	"Power Usage: $($_.'Power Usage')"
     "Uptime: $($_.'Uptime')"
     ""
-} | Tee-Object -FilePath "/nifiScripts/output9.txt" -Encoding utf8
+} | Tee-Object -FilePath "/Datalake_Project/output9.txt" -Encoding utf8

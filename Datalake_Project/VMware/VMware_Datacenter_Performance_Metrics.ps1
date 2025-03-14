@@ -210,4 +210,4 @@ $output | ForEach-Object {
     "total cluster count: $($_.total_cluster_count)"
     
     ""
-} | Tee-Object -FilePath "/nifiScripts/datacenter_summary.txt" -Encoding utf8
+} | Tee-Object -FilePath "/Datalake_Project/datacenter_summary.txt" -Encoding utf8

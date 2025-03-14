@@ -28,35 +28,17 @@
         "output_json": 1,
         "output_csv": 0,
         "output_influx": 0,
-        "ihost": "myinflux",
-        "iport": "8086",
-        "idbname": "nextractplus",
-        "iuser": "fred",
-        "ipassword": "blogs",
+        "ihost": "",
+        "iport": "",
+        "idbname": "",
+        "iuser": "",
+        "ipassword": "",
         "debug": 1
-    },
-    "Loki": {
-        "ip": "https://loki.bulutistan.com/api/dcim/",
-        "api_token": "13201880f324d54b1edb7351175a6fe2d4d833e9",
-        "location_table_name" :"loki_locations",
-        "location_endpoint": "locations/",
-
-        "rack_table_name" :"loki_racks",
-        "rack_endpoint": "racks/",
-
-        "device_table_name" :"loki_devices",
-        "device_endpoint": "devices/"
     },
     "Nutanix": {
         "PRISM_IP" : "10.34.2.205", 
         "USERNAME" : "zabbix@blt.vc",
         "PASSWORD" : "2u4Mzf7RJC"  
-    },
-    "Zabbix": {
-        "zabbixHostName" : "HMC-AggratedMetrics",
-        "zabUrl" : "",
-        "zabUser" : "Admin",
-        "zabPassword" :"zabbix"
     },
     "Netbackup": {
         "api_url" : "",

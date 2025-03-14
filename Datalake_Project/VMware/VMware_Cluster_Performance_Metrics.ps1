@@ -219,4 +219,4 @@ $output | ForEach-Object {
     "Total FreeSpace GB: $($_.TotalFreeSpaceGB)"
     "Total Capacity GB: $($_.TotalCapacityGB)"
     ""
-} | Tee-Object -FilePath "/nifiScripts/cluster_summary_15min_intervals.txt" -Encoding utf8
+} | Tee-Object -FilePath "/Datalake_Project/cluster_summary_15min_intervals.txt" -Encoding utf8
