@@ -1,0 +1,889 @@
+#!/usr/bin/python3
+version = 45  # March 2024
+
+import IBM_hmc_Stats_Processor as hmc
+import time
+import sys
+import json
+
+measures = 0
+debug = 0
+
+log = 0  # save the line protocol stats to a file called lp.log
+
+output_json_file = "output.json"
+
+if log:
+    logfile = open("output_log.json", 'w')
+
+def hint():
+    print('Usage:  %s version %d' % (sys.argv[0], version))
+    print('%s filename.json - use the JSON file to find the parameters' % sys.argv[0])
+    print('Example config.json')
+    print('{')
+    print('  "hmc_hostname": "hmc15,hmc16",')
+    print('  "hmc_user": "pcmadmin",')
+    print('  "hmc_password": "panda123sausages!",')
+    print('  "output_nchart": 0,')
+    print('  "output_json": 0,')
+    print('  "output_csv": 0,')
+    print('  "output_influx": 1,')
+    print('  "ihost": "myinflux",')
+    print('  "iport": 8086,')
+    print('  "idbname": "nextractplus",')
+    print('  "iuser": "fred",')
+    print('  "ipassword": "blogs"')
+    print('}')
+    sys.exit(0)
+
+if len(sys.argv) == 1:
+    hint()
+
+if len(sys.argv) != 2:
+    hint()
+
+# Varsayılan değerler
+hmc_hostname = "not-found"
+hmc_user     = "not-found"
+hmc_password = "not-found"
+
+try:
+    print("%s opening config file: %s" % (sys.argv[0], sys.argv[1]))
+    with open(sys.argv[1]) as auth_file:
+        auth = json.load(auth_file)
+
+    # Eğer konfigürasyon "IBM-HMC" altında tanımlı ise
+    if "IBM-HMC" in auth:
+        auth = auth["IBM-HMC"]
+
+    # hmc_hostname alanı birden fazla değer içerebilir (ör. "hmc15,hmc16")
+    raw_hmc_hostname = auth.get("hmc_hostname", "Not Provided")
+    # Virgül ile ayrılmış değerleri temizleyerek listeye dönüştürün
+    hmc_hostname_list = [host.strip() for host in raw_hmc_hostname.split(",") if host.strip()]
+    hmc_user = auth.get("hmc_user", "Not Provided")
+    hmc_password = auth.get("hmc_password", "Not Provided")
+
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    print(f"Problem loading JSON file {sys.argv[1]}: {e}")
+    hmc_hostname_list = []
+    hmc_user = hmc_password = "Unknown"
+
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+    hmc_hostname_list = []
+    hmc_user = hmc_password = "Unknown"
+
+finally:
+    print("hmc_hostname(s)=%s hmc_user=%s hmc_password=%s" % (", ".join(hmc_hostname_list), hmc_user, hmc_password))
+    if "Unknown" in (hmc_user, hmc_password) or not hmc_hostname_list:
+        sys.exit(0)
+
+output_nchart = 0
+output_json = 0
+output_csv = 0
+output_influx = 0
+
+try:
+    output_nchart = auth["output_nchart"]
+    output_json = auth["output_json"]
+    output_csv = auth["output_csv"]
+    output_influx = auth["output_influx"]
+except:
+    print("Problem loading JSON file %s" % sys.argv[1])
+    print("nchart=%d json=%d csv=%d influx=%d" % (output_nchart, output_json, output_csv, output_influx))
+    sys.exit(0)
+
+# InfluxDB bağlantısı için ayarlar
+if output_influx == 1:
+    ihost = "not-found"
+    iport = 8086
+    idbname = "not-found"
+    iuser = "not-found"
+    ipassword = "not-found"
+
+    try:
+        ihost = auth["ihost"]
+        iport = auth["iport"]
+        idbname = auth["idbname"]
+        iuser = auth["iuser"]
+        ipassword = auth["ipassword"]
+    except:
+        print("Problem loading Influx1 settings from JSON file %s" % sys.argv[1])
+        print("ihost=%s iport=%d idbname=%s iuser=%s ipassword=%s" % (ihost, iport, idbname, iuser, ipassword))
+        sys.exit(0)
+
+    if debug:
+        print("Influx: " + ihost + " Influx port: " + str(iport) + " db: " + idbname)
+        print(" user: " + iuser + " pass: " + ipassword)
+
+    from influxdb import InfluxDBClient
+    client = InfluxDBClient(host=ihost, port=iport, username=iuser, password=ipassword, database=idbname)
+
+elif output_influx == 2:
+    iurl = "no-url"
+    iorg = "no-org"
+    itoken = "no-token"
+
+    try:
+        iurl = auth["iurl"]
+        iorg = auth["iorg"]
+        itoken = auth["itoken"]
+    except:
+        print("Problem loading Influx2 settings from JSON file %s" % sys.argv[1])
+        print("iurl=%s iorg=%s itoken=%s" % (iurl, iorg, itoken))
+        sys.exit(0)
+
+    if debug:
+        print("Influx URL:" + iurl + " Influx Org:" + iorg + " Influx Token:" + itoken)
+
+    from influxdb import InfluxDBClient
+    client = InfluxDBClient(url=iurl, token=itoken, org=iorg)
+    write_api = client.write_api()
+
+def extract_data(data):
+    "fix json by removing arrays of only one item"
+    fields = {}
+    for key, value in data.items():
+        if key == "bridgedAdapters":
+            continue
+        if key == "transmittedBytes":
+            continue
+        if key == "physicalLocation":
+            # Force to be a string (fix the rare HMC mistake mixed int or string)
+            value = str(value)
+        try:
+            # Eğer değer bir liste ise, ilk elemanı alıp float'a çevirmeyi dene
+            fields[key] = float(value[0])
+        except:
+            fields[key] = value
+    return fields
+
+# Global olarak tüm HMC sunucularından toplanan verileri saklamak için
+entry = []
+
+print("-> nextract_plus version %d saving JSON=%d Influx=%d" % (version, output_json, output_influx))
+print("-> Logging on to HMC(s): %s as hmc_user %s" % (", ".join(hmc_hostname_list), hmc_user))
+
+# Her bir HMC sunucusu için ayrı ayrı veri toplama işlemi yapılacak
+for current_hmc in hmc_hostname_list:
+    print("-> Connecting to HMC: %s" % current_hmc)
+    hmc_instance = hmc.HMC(current_hmc, hmc_user, hmc_password)
+
+    print("-> Get Preferences")
+    prefstripped = hmc_instance.get_stripped_preferences_pcm()
+    if debug:
+        hmc_instance.save_to_file("server_perferences.xml", prefstripped)
+
+    print("-> Parse Preferences")
+    serverlist = hmc_instance.parse_prefs_pcm(prefstripped)  # her sunucu için dictionary listesi
+    perflist = []
+    print("-> ALL servers for HMC %s:" % current_hmc)
+    for num, server in enumerate(serverlist):
+        if server['lterm'] == 'true' and server['agg'] == 'true':
+            perflist.append(server)
+            todo = "- OK"
+        else:
+            todo = "- remove"
+        print('-> Server name=%-16s agg=%-5s longterm=%-5s %s ' % (server['name'], server['agg'], server['lterm'], todo))
+
+    print("-> Servers with Perf Stats for HMC %s:" % current_hmc)
+    hmc_instance.get_managed_system_data()
+    ids, system_name_map = hmc_instance.extract_ids_from_xml()
+    hmc_instance.fetch_system_details(ids, system_name_map)
+
+    for count, server in enumerate(perflist, start=1):
+        print('')
+        print('--> Server=%d Name=%s - Requesting the data ...' % (count, server['name']))
+        starttime = time.time()
+        filelist = hmc_instance.get_filenames_server(server['atomid'], server['name'])
+        endtime = time.time()
+        print("---> Received %d file(s) in %.2f seconds" % (len(filelist), endtime - starttime))
+
+        if debug:
+            for num, file in enumerate(filelist, start=1):
+                filename = file['filename']
+                print('---> Server=%s File=%d %s' % (server['name'], num, filename))
+
+        if debug:
+            hmc_instance.set_debug(True)
+
+        for num, file in enumerate(filelist, start=1):
+            filename = file['filename']
+            data = hmc_instance.get_stats(file['url'], filename, server['name'])
+            if filename[:13] == "ManagedSystem":
+                filename2 = filename.replace('.json', '.JSON')
+                if debug:
+                    print('ManagedSystem Saving to file: %s' % filename2)
+                    hmc_instance.save_json_txt_to_file(filename2, data)
+                jdata = json.loads(data)
+                info = jdata["systemUtil"]["utilInfo"]
+                servername = info['name']
+                print("----> Server Name=%s MTM + Serial Number=%s" % (servername, info['mtms']))
+                print("----> Server Date=%s start=%s end=%s" % (info['startTimeStamp'][:10],
+                                                                info['startTimeStamp'][11:19],
+                                                                info['endTimeStamp'][11:19]))
+                print("----> Server DataType=%s Interval=%s seconds" % (info['metricType'], info['frequency']))
+                if debug:
+                    print("Info dictionary:")
+                    print(info)
+
+                utilSamplesArray = jdata['systemUtil']['utilSamples']
+
+                with open('system_details_output.json', 'r') as file:
+                    system_details = json.load(file)
+
+                system_name_to_uptime = {
+                    detail['system_name']: detail['uptimes'][0] if detail['uptimes'] else "Unknown"
+                    for detail in system_details
+                }
+
+                for sample in utilSamplesArray:
+                    timestamp = sample['sampleInfo']['timeStamp']
+                    try:
+                        fields = extract_data(sample['systemFirmwareUtil'])
+                        fields['mtm'] = info['mtms']
+                        fields['name'] = servername
+                        fields['APIversion'] = info['version']
+                        fields['metric'] = info['metricType']
+                        fields['frequency'] = info['frequency']
+                        fields['nextract'] = str(version)
+                        uptime = system_name_to_uptime.get(servername, "Unknown")
+                        fields['uptime'] = uptime
+                        data_point = {
+                            'measurement': 'server_details',
+                            'time': timestamp,
+                            'tags': {'servername': servername},
+                            'fields': fields
+                        }
+                        entry.append(data_point)
+                        if debug:
+                            print(f"Added system details with uptime: {fields}")
+                    except Exception as e:
+                        if debug:
+                            print(f"Error processing system details: {e}")
+
+                    try:
+                        data_point = {
+                            'measurement': 'server_processor',
+                            'time': timestamp,
+                            'tags': {'servername': servername},
+                            'fields': extract_data(sample['serverUtil']['processor'])
+                        }
+                        entry.append(data_point)
+                        if debug:
+                            print("has server_processor")
+                    except:
+                        if debug:
+                            print("no server_processor")
+
+                    try:
+                        data_point = {
+                            'measurement': 'server_memory',
+                            'time': timestamp,
+                            'tags': {'servername': servername},
+                            'fields': extract_data(sample['serverUtil']['memory'])
+                        }
+                        entry.append(data_point)
+                        if debug:
+                            print("has server_mem")
+                    except:
+                        if debug:
+                            print("no server_mem")
+
+                    try:
+                        data_point = {
+                            'measurement': 'server_physicalProcessorPool',
+                            'time': timestamp,
+                            'tags': {'servername': servername},
+                            'fields': extract_data(sample['serverUtil']['physicalProcessorPool'])
+                        }
+                        entry.append(data_point)
+                        if debug:
+                            print("has server_physicalProcessorPool")
+                    except:
+                        if debug:
+                            print("no server_physicalProcessorPool")
+
+                    try:
+                        arr = sample['serverUtil']['sharedMemoryPool']
+                        for pool in arr:
+                            data_point = {
+                                'measurement': 'server_sharedMemoryPool',
+                                'time': timestamp,
+                                'tags': {'servername': servername, 'pool': pool['id']},
+                                'fields': extract_data(pool)
+                            }
+                            entry.append(data_point)
+                        if debug:
+                            print("has server_sharedMemoryPool")
+                    except:
+                        if debug:
+                            print("no server_sharedMemoryPool")
+
+                    try:
+                        for pool in sample['serverUtil']['sharedProcessorPool']:
+                            data_point = {
+                                'measurement': 'server_sharedProcessorPool',
+                                'time': timestamp,
+                                'tags': {'servername': servername, 'pool': pool['id'], 'poolname': pool['name']},
+                                'fields': extract_data(pool)
+                            }
+                            entry.append(data_point)
+                        if debug:
+                            print("has server_sharedProcessorPool")
+                    except:
+                        if debug:
+                            print("no server_sharedProcessorPool")
+
+                    try:
+                        for adapter in sample['serverUtil']['network']['sriovAdapters']:
+                            for adaptport in adapter['physicalPorts']:
+                                data_point = {
+                                    'measurement': 'server_sriov',
+                                    'time': timestamp,
+                                    'tags': {
+                                        'servername': servername,
+                                        'port': adaptport['id'],
+                                        'location': adaptport['physicalLocation']
+                                    },
+                                    'fields': extract_data(adaptport)
+                                }
+                                entry.append(data_point)
+                        if debug:
+                            print("has server_sriov")
+                    except:
+                        if debug:
+                            print("no server_sriov")
+
+                    try:
+                        for HEA in sample['serverUtil']['network']['HEAdapters']['physicalPorts']:
+                            for HEAport in HEA:
+                                data_point = {
+                                    'measurement': 'server_HEAport',
+                                    'time': timestamp,
+                                    'tags': {
+                                        'servername': servername,
+                                        'port': HEAport['id'],
+                                        'location': HEAport['physicalLocation']
+                                    },
+                                    'fields': extract_data(HEAport)
+                                }
+                                entry.append(data_point)
+                        if debug:
+                            print("has server_net_HEAport")
+                    except:
+                        if debug:
+                            print("no server_net_HEAport")
+
+                    try:
+                        vios_array = sample['viosUtil']
+                        try:
+                            for vios in vios_array:
+                                data_point = {
+                                    'measurement': 'vios_details',
+                                    'time': timestamp,
+                                    'tags': {'servername': servername, 'viosname': vios['name']},
+                                    'fields': {
+                                        'viosid': vios['id'],
+                                        'viosname': vios['name'],
+                                        'viosstate': vios['state'],
+                                        'affinityScore': vios['affinityScore']
+                                    }
+                                }
+                                entry.append(data_point)
+                            if debug:
+                                print("has VIOS_details")
+                        except:
+                            if debug:
+                                print("no VIOS_details")
+
+                        try:
+                            for vios in vios_array:
+                                data_point = {
+                                    'measurement': 'vios_memory',
+                                    'time': timestamp,
+                                    'tags': {'servername': servername, 'viosname': vios['name']},
+                                    'fields': extract_data(vios['memory'])
+                                }
+                                entry.append(data_point)
+                            if debug:
+                                print("has VIOS_memory")
+                        except:
+                            if debug:
+                                print("no VIOS_memory")
+
+                        try:
+                            for vios in vios_array:
+                                data_point = {
+                                    'measurement': 'vios_processor',
+                                    'time': sample['sampleInfo']['timeStamp'],
+                                    'tags': {'servername': servername, 'viosname': vios['name']},
+                                    'fields': extract_data(vios['processor'])
+                                }
+                                entry.append(data_point)
+                            if debug:
+                                print("has VIOS_processor")
+                        except:
+                            if debug:
+                                print("no VIOS_processor")
+
+                        try:
+                            for vios in vios_array:
+                                length = len(vios['network']['clientLpars'])
+                                data_point = {
+                                    'measurement': 'vios_network_lpars',
+                                    'time': timestamp,
+                                    'tags': {'servername': servername, 'viosname': vios['name']},
+                                    'fields': {'clientlpars': length}
+                                }
+                                entry.append(data_point)
+                            if debug:
+                                print("has VIOS_network_lpars")
+                        except:
+                            if debug:
+                                print("no VIOS_network_lpars")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['network']['genericAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_network_generic',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id'],
+                                            'location': adapt['physicalLocation']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_network_generic")
+                        except:
+                            if debug:
+                                print("no VIOS vios_network_generic")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['network']['sharedAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_network_shared',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id'],
+                                            'location': adapt['physicalLocation']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_network_shared")
+                        except:
+                            if debug:
+                                print("no VIOS vios_network_shared")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['network']['virtualEthernetAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_network_virtual',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'location': adapt['physicalLocation'],
+                                            'vswitchid': adapt['vswitchId'],
+                                            'vlanid': adapt['vlanId']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_network_virtual")
+                        except:
+                            if debug:
+                                print("no VIOS vios_network_virtual")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['network']['sriovLogicalPorts']:
+                                    data_point = {
+                                        'measurement': 'vios_network_sriov',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'location': adapt['physicalLocation'],
+                                            'physicalPortId': adapt['physicalPortId']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_network_sriov")
+                        except:
+                            if debug:
+                                print("no VIOS vios_network_sriov")
+
+                        try:
+                            for vios in vios_array:
+                                length = len(vios['storage']['clientLpars'])
+                                data_point = {
+                                    'measurement': 'vios_storage_lpars',
+                                    'time': timestamp,
+                                    'tags': {'servername': servername, 'viosname': vios['name']},
+                                    'fields': {'clientlpars': length}
+                                }
+                                entry.append(data_point)
+                            if debug:
+                                print("has VIOS_storage_lpars")
+                        except:
+                            if debug:
+                                print("no VIOS_storage_lpars")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['storage']['genericVirtualAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_storage_virtual',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id'],
+                                            'location': adapt['physicalLocation']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_storage_virtual")
+                        except:
+                            if debug:
+                                print("no VIOS vios_storage_virtual")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['storage']['genericPhysicalAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_storage_physical',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id'],
+                                            'location': adapt['physicalLocation']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_storage_physical")
+                        except:
+                            if debug:
+                                print("no VIOS vios_storage_physical")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['storage']['fiberChannelAdapters']:
+                                    data_point = {
+                                        'measurement': 'vios_storage_FC',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id'],
+                                            'location': adapt['physicalLocation']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_storage_FC")
+                        except:
+                            if debug:
+                                print("no VIOS vios_storage_FC")
+
+                        try:
+                            for vios in vios_array:
+                                for adapt in vios['storage']['sharedStoragePools']:
+                                    data_point = {
+                                        'measurement': 'vios_storage_SSP',
+                                        'time': timestamp,
+                                        'tags': {
+                                            'servername': servername,
+                                            'viosname': vios['name'],
+                                            'id': adapt['id']
+                                        },
+                                        'fields': extract_data(adapt)
+                                    }
+                                    entry.append(data_point)
+                            if debug:
+                                print("has VIOS vios_storage_SSP")
+                        except:
+                            if debug:
+                                print("no VIOS vios_storage_SSP")
+                    except:
+                        if debug:
+                            print("no VIOS at all")
+                # İşlem bitince (ManagedSystem) diğer dosya tiplerini de kontrol edelim
+
+            if filename[:16] == "LogicalPartition":
+                if debug:
+                    filename2 = filename + ".xml"
+                    print('----> Server=%s Filenames XML File=%d bytes=%d name=%s' % (server['name'], num, len(data), filename2))
+                    hmc_instance.save_to_file(filename2, data)
+                    print('----> LPAR on Server=%s Filenames XML File=%d bytes=%d' % (server['name'], num, len(data)))
+
+                filename3, url = hmc_instance.get_filename_from_xml(data)
+                if filename3 == "" or url == "":
+                    continue
+                LPARstats = hmc_instance.get_stats(url, filename3, "LPARstats")
+                if debug:
+                    filename3 = filename3.replace('.json', '.JSON')
+                    print('---> Save readable JSON File=%d bytes=%d name=%s' % (num, len(LPARstats), filename3))
+                    hmc_instance.save_json_txt_to_file(filename3, LPARstats)
+                jdata = json.loads(LPARstats)
+                servername = jdata["systemUtil"]["utilInfo"]['name']
+                lparname = jdata["systemUtil"]["utilSamples"][0]['lparsUtil'][0]['name']
+                print('----> LPAR=%s' % (lparname))
+                errorlist = {'error'}
+
+                for sample in jdata['systemUtil']['utilSamples']:
+                    errors = 0
+                    samplestatus = sample['sampleInfo']['status']
+                    sampletime = sample['sampleInfo']['timeStamp']
+                    if samplestatus != 0:
+                        errmsg = "None"
+                        errId = "None"
+                        uuid = "None"
+                        reportedBy = "None"
+                        try:
+                            errmsg = sample['sampleInfo']['errorInfo'][0]['errMsg']
+                            errId = sample['sampleInfo']['errorInfo'][0]['errId']
+                            uuid = sample['sampleInfo']['errorInfo'][0]['uuid']
+                            reportedBy = sample['sampleInfo']['errorInfo'][0]['reportedBy']
+                        except:
+                            print("Error State non-zero but there is no error messages . . . continuing")
+                        errors += 1
+                        e_before = len(errorlist)
+                        error = "%s%d%s%s%s" % (servername, samplestatus, errId, reportedBy, errmsg)
+                        errorlist.add(error)
+                        e_after = len(errorlist)
+                        if e_before != e_after:
+                            print("ERROR Server=%s LPAR=%s: Status=%d errId=%s From=%s\nERROR Description=%s\n" %
+                                  (servername, lparname, samplestatus, errId, reportedBy, errmsg))
+
+                    for lpar in sample['lparsUtil']:
+                        try:
+                            data_point = {
+                                'measurement': 'lpar_details',
+                                'time': sampletime,
+                                'tags': {'servername': servername, 'lparname': lparname},
+                                'fields': {
+                                    "id": lpar['id'],
+                                    "name": lpar['name'],
+                                    "state": lpar['state'],
+                                    "type": lpar['type'],
+                                    "osType": lpar['osType'],
+                                    "affinityScore": lpar['affinityScore']
+                                }
+                            }
+                            entry.append(data_point)
+                            if debug:
+                                print("has lpar_details %s %s %s" % (servername, lparname, sampletime))
+                        except:
+                            if debug:
+                                print("no lpar_details %s %s %s" % (servername, lparname, sampletime))
+
+                        try:
+                            data_point = {
+                                'measurement': 'lpar_processor',
+                                'time': sampletime,
+                                'tags': {'servername': servername, 'lparname': lparname},
+                                'fields': extract_data(lpar['processor'])
+                            }
+                            entry.append(data_point)
+                            if debug:
+                                print("has lpar_processor %s %s %s" % (servername, lparname, sampletime))
+                        except:
+                            if debug:
+                                print("no lpar_processor %s %s %s" % (servername, lparname, sampletime))
+
+                        try:
+                            data_point = {
+                                'measurement': 'lpar_memory',
+                                'time': sampletime,
+                                'tags': {'servername': servername, 'lparname': lparname},
+                                'fields': extract_data(lpar['memory'])
+                            }
+                            entry.append(data_point)
+                            if debug:
+                                print("has lpar_memory %s %s %s" % (servername, lparname, sampletime))
+                        except:
+                            if debug:
+                                print("no lpar_memory %s %s %s" % (servername, lparname, sampletime))
+
+                        if debug:
+                            print("LPAR state = |%s| %s %s %s" % (lpar['state'], servername, lparname, sampletime))
+                        if lpar['state'] == "Not Activated":
+                            continue
+
+                        try:
+                            for net in lpar['network']['virtualEthernetAdapters']:
+                                try:
+                                    data_point = {
+                                        'measurement': 'lpar_net_virtual',
+                                        'time': sampletime,
+                                        'tags': {
+                                            'servername': servername,
+                                            'lparname': lparname,
+                                            'location': net['physicalLocation'],
+                                            'vlanId': net['vlanId'],
+                                            'vswitchId': net['vswitchId']
+                                        },
+                                        'fields': extract_data(net)
+                                    }
+                                    entry.append(data_point)
+                                    if debug:
+                                        print("has lpar_net_virtual")
+                                except:
+                                    if debug:
+                                        print("no lpar_net_virtual")
+                        except:
+                            if debug:
+                                print("no lpar_net_virtual %s %s %s" % (servername, lparname, sampletime))
+
+                        try:
+                            for net in lpar['network']['sriovLogicalPorts']:
+                                if debug:
+                                    print(net)
+                                try:
+                                    data_point = {
+                                        'measurement': 'lpar_network_sriov',
+                                        'time': sampletime,
+                                        'tags': {
+                                            'servername': servername,
+                                            'lparname': lparname,
+                                            'location': net['physicalLocation'],
+                                            'physicalPortId': net['physicalPortId']
+                                        },
+                                        'fields': extract_data(net)
+                                    }
+                                    entry.append(data_point)
+                                    if debug:
+                                        print(data_point)
+                                except:
+                                    if debug:
+                                        print("no lpar_network_sriov")
+                        except:
+                            if debug:
+                                print("no lpar_network_sriov %s %s %s" % (servername, lparname, sampletime))
+
+                        try:
+                            for store in lpar['storage']['genericVirtualAdapters']:
+                                try:
+                                    data_point = {
+                                        'measurement': 'lpar_storage_virtual',
+                                        'time': sampletime,
+                                        'tags': {
+                                            'servername': servername,
+                                            'lparname': lparname,
+                                            'id': store['id'],
+                                            'location': net['physicalLocation'],
+                                            'viosId': store['viosId']
+                                        },
+                                        'fields': extract_data(store)
+                                    }
+                                    entry.append(data_point)
+                                except:
+                                    if debug:
+                                        print("no lpar_storage_virtual")
+                        except:
+                            if debug:
+                                print("no lpar_storage_virtual %s %s %s" % (servername, lparname, sampletime))
+
+                        try:
+                            for store in lpar['storage']['virtualFiberChannelAdapters']:
+                                try:
+                                    data_point = {
+                                        'measurement': 'lpar_storage_vFC',
+                                        'time': sampletime,
+                                        'tags': {
+                                            'servername': servername,
+                                            'lparname': lparname,
+                                            'location': store['physicalLocation'],
+                                            'viosId': store['viosId']
+                                        },
+                                        'fields': extract_data(store)
+                                    }
+                                    entry.append(data_point)
+                                except:
+                                    if debug:
+                                        print("no lpar_storage_vFC")
+                        except:
+                            if debug:
+                                print("no lpar_storage_vFC %s %s %s" % (servername, lparname, sampletime))
+            # PUSH TO INFLUXDB or JSON file for each HMC's processed data
+            if len(entry) > 25000:
+                print("Adding %d records to InfluxDB for Server=%s on HMC %s" % (len(entry), servername, current_hmc))
+                measures += len(entry)
+                if log:
+                    for line in entry:
+                        logfile.write(str(line) + "\n")
+                if output_influx == 1:
+                    client.write_points(entry)
+                elif output_influx == 2:
+                    write_api.write(ibucket, iorg, entry)
+                if output_json == 1:
+                    try:
+                        JSONfile = open(output_json_file, "a")
+                    except Exception as e:
+                        print(f"Failed to open JSON file: {e}")
+                        JSONfile = None
+                    if JSONfile:
+                        for item in entry:
+                            try:
+                                JSONfile.write(str(item) + "\n")
+                            except Exception as e:
+                                print(f"Failed to write to JSON file: {e}")
+                        JSONfile.close()
+                entry = []  # empty the list
+
+    # PUSH REMAINING DATA for current HMC
+    if len(entry) > 0:
+        if log:
+            for line in entry:
+                logfile.write(str(line) + "\n")
+        if output_influx == 1:
+            client.write_points(entry)
+        elif output_influx == 2:
+            write_api.write(ibucket, iorg, entry)
+        print("Added %d records to InfluxDB for HMC %s" % (len(entry), current_hmc))
+        measures += len(entry)
+        if output_json == 1:
+            try:
+                JSONfile = open(output_json_file, "a")
+            except Exception as e:
+                print(f"Failed to open JSON file: {e}")
+                JSONfile = None
+            if JSONfile:
+                for item in entry:
+                    try:
+                        JSONfile.write(str(item) + "\n")
+                    except Exception as e:
+                        print(f"Failed to write to JSON file: {e}")
+                JSONfile.close()
+        entry = []  # empty the list
+
+    print("Logging off the HMC: %s" % current_hmc)
+    hmc_instance.cleanup_created_files()
+    hmc_instance.logoff()
+
+if log:
+    logfile.close()
+
+print("Logging off the HMC(s) - found %d measures" % measures)
