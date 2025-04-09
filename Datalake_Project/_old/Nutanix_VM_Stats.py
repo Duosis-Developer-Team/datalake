@@ -4,26 +4,22 @@ import time
 from datetime import datetime
 import json
 
+
 #################################################################
-# Konfigürasyon dosyasını oku
 json_file_path = "/Datalake_Project/configuration_file.json"
 with open(json_file_path, "r") as file:
     config = json.load(file)
-
 # Nutanix Prism API erişim bilgileri
+
 nutanix_config = config["Nutanix"]
 
-# PRISM_IP değeri birden fazla IP içerebileceği için virgül ile ayrılmış string'i listeye dönüştür
-prism_ip_string = nutanix_config['PRISM_IP']
-if prism_ip_string:
-    prism_ips = [ip.strip() for ip in prism_ip_string.split(",") if ip.strip()]
-else:
-    prism_ips = []
-
+PRISM_IP = nutanix_config['PRISM_IP']
 USERNAME = nutanix_config["USERNAME"]
 PASSWORD = nutanix_config["PASSWORD"]
-
+BASE_URL = f"https://{PRISM_IP}:9440/PrismGateway/services/rest/v1"
 ###############################################################
+
+
 # SSL Sertifika uyarısını atlamak için
 requests.packages.urllib3.disable_warnings()
 
@@ -36,13 +32,14 @@ HEADERS = {
 # Kimlik doğrulama
 AUTH = (USERNAME, PASSWORD)
 
-def fetch_vms(base_url):
+
+def fetch_vms():
     """VM verilerini almak için vms endpoint'ine gider."""
     all_vms = []
     page = 1
     while True:
         try:
-            response = requests.get(f"{base_url}/vms/?count=500&page={page}", headers=HEADERS, auth=AUTH, verify=False)
+            response = requests.get(f"{BASE_URL}/vms/?count=500&page={page}", headers=HEADERS, auth=AUTH, verify=False)
             response.raise_for_status()
             vms = response.json().get("entities", [])
             if not vms:
@@ -54,7 +51,8 @@ def fetch_vms(base_url):
             break
     return all_vms
 
-def fetch_vm_stats(base_url, vm_uuid):
+
+def fetch_vm_stats(vm_uuid):
     """Belirli bir VM için historical stats verilerini alır."""
     end_time = int(time.time() * 1e6)  # Şu anki zaman (mikroseconds)
     start_time = end_time - (15 * 60 * 1e6)  # 15 dakika önce
@@ -75,7 +73,7 @@ def fetch_vm_stats(base_url, vm_uuid):
     results = {}
     for metrics in metrics_groups:
         metrics_query = "&".join([f"metrics={metric}" for metric in metrics])
-        stats_url = f"{base_url}/vms/{vm_uuid}/stats/?{metrics_query}&startTimeInUsecs={int(start_time)}&intervalInSecs=60"
+        stats_url = f"{BASE_URL}/vms/{vm_uuid}/stats/?{metrics_query}&startTimeInUsecs={int(start_time)}&intervalInSecs=60"
 
         try:
             response = requests.get(stats_url, headers=HEADERS, auth=AUTH, verify=False)
@@ -103,11 +101,12 @@ def fetch_vm_stats(base_url, vm_uuid):
                     }
 
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching stats for VM {vm_uuid}: {e}")
+            print(f"")
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            print(f"")
 
     return results
+
 
 def calculate_storage_usage(vm):
     """VM için storage usage hesaplama."""
@@ -115,13 +114,15 @@ def calculate_storage_usage(vm):
     das_sata_usage = int(vm.get("stats", {}).get("controller.storage_tier.das-sata.usage_bytes", 0))
     return ssd_usage + das_sata_usage
 
+
 def format_value(value):
     """PostgreSQL uyumlu değer formatlama."""
     if value is None:
         return 'NULL'
     if isinstance(value, str):
-        return "'{}'".format(value.replace("'", "''"))
+        return "'{}'".format(value.replace("'", "''"))  # SQL injection'ı önlemek için tek tırnak kaçışları
     return str(value)
+
 
 def generate_insert_query(data):
     """Tek bir INSERT sorgusu oluşturur."""
@@ -179,49 +180,52 @@ def generate_insert_query(data):
     ) VALUES {", ".join(values)};"""
     return query.strip()
 
+
 def main():
+    vms = fetch_vms()
     all_data = []
-    # Her bir PRISM_IP için döngü kuruyoruz
-    for prism_ip in prism_ips:
-        base_url = f"https://{prism_ip}:9440/PrismGateway/services/rest/v1"
-        vms = fetch_vms(base_url)
 
-        for vm in vms:
-            vm_stats = fetch_vm_stats(base_url, vm["uuid"])
-            used_storage = calculate_storage_usage(vm)
-            guest_os = vm.get("guestOperatingSystem")
+    for vm in vms:
+        vm_stats = fetch_vm_stats(vm["uuid"])
 
-            vm_data = {
-                "vm_name": vm["vmName"],
-                "vm_uuid": vm["uuid"],
-                "cluster_uuid": vm["clusterUuid"],
-                "host_name": vm["hostName"],
-                "host_uuid": vm["hostUuid"],
-                "power_state": vm["powerState"],
-                "memory_capacity": vm["memoryCapacityInBytes"],
-                "cpu_count": vm["numVCpus"],
-                "disk_capacity": vm["diskCapacityInBytes"],
-                "hypervisor_read_io_bandwidth_min": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("min"),
-                "hypervisor_read_io_bandwidth_max": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("max"),
-                "hypervisor_read_io_bandwidth_avg": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("avg"),
-                "hypervisor_write_io_bandwidth_min": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("min"),
-                "hypervisor_write_io_bandwidth_max": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("max"),
-                "hypervisor_write_io_bandwidth_avg": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("avg"),
-                "cpu_usage_min": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("min"),
-                "cpu_usage_max": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("max"),
-                "cpu_usage_avg": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("avg"),
-                "memory_usage_min": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("min"),
-                "memory_usage_max": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("max"),
-                "memory_usage_avg": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("avg"),
-                "used_storage": used_storage,
-                "guest_os": guest_os,
-                "prism_ip": prism_ip
-            }
+        # Storage usage hesapla
+        used_storage = calculate_storage_usage(vm)
 
-            all_data.append(vm_data)
+        # Guest OS al
+        guest_os = vm.get("guestOperatingSystem")
 
+        vm_data = {
+            "vm_name": vm["vmName"],
+            "vm_uuid": vm["uuid"],
+            "cluster_uuid": vm["clusterUuid"],
+            "host_name": vm["hostName"],
+            "host_uuid": vm["hostUuid"],
+            "power_state": vm["powerState"],
+            "memory_capacity": vm["memoryCapacityInBytes"],
+            "cpu_count": vm["numVCpus"],
+            "disk_capacity": vm["diskCapacityInBytes"],
+            "hypervisor_read_io_bandwidth_min": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("min"),
+            "hypervisor_read_io_bandwidth_max": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("max"),
+            "hypervisor_read_io_bandwidth_avg": vm_stats.get("hypervisor_read_io_bandwidth_kBps", {}).get("avg"),
+            "hypervisor_write_io_bandwidth_min": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("min"),
+            "hypervisor_write_io_bandwidth_max": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("max"),
+            "hypervisor_write_io_bandwidth_avg": vm_stats.get("hypervisor_write_io_bandwidth_kBps", {}).get("avg"),
+            "cpu_usage_min": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("min"),
+            "cpu_usage_max": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("max"),
+            "cpu_usage_avg": vm_stats.get("hypervisor_cpu_usage_ppm", {}).get("avg"),
+            "memory_usage_min": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("min"),
+            "memory_usage_max": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("max"),
+            "memory_usage_avg": vm_stats.get("hypervisor_memory_usage_ppm", {}).get("avg"),
+            "used_storage": used_storage,
+            "guest_os": guest_os
+        }
+
+        all_data.append(vm_data)
+
+    # Tek bir INSERT sorgusu oluştur ve yazdır
     insert_query = generate_insert_query(all_data)
     print(insert_query)
+
 
 if __name__ == "__main__":
     main()

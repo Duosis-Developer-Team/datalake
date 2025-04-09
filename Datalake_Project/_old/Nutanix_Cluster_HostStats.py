@@ -4,23 +4,18 @@ import time
 import json 
 
 #################################################################
-# Konfigürasyon dosyasını oku
 json_file_path = "/Datalake_Project/configuration_file.json"
 with open(json_file_path, "r") as file:
     config = json.load(file)
-
 # Nutanix Prism API erişim bilgileri
+
 nutanix_config = config["Nutanix"]
 
-# PRISM_IP değeri birden fazla IP içerebileceği için virgül ile ayrılmış string'i listeye dönüştürüyoruz.
-prism_ip_string = nutanix_config['PRISM_IP']
-if prism_ip_string:
-    prism_ips = [ip.strip() for ip in prism_ip_string.split(",") if ip.strip()]
-else:
-    prism_ips = []
-
+PRISM_IP = nutanix_config['PRISM_IP']
 USERNAME = nutanix_config["USERNAME"]
 PASSWORD = nutanix_config["PASSWORD"]
+BASE_URL = f"https://{PRISM_IP}:9440/PrismGateway/services/rest/v2.0"
+###############################################################
 
 # SSL Sertifika uyarısını atlamak için
 requests.packages.urllib3.disable_warnings()
@@ -34,9 +29,10 @@ HEADERS = {
 # Kimlik doğrulama
 AUTH = (USERNAME, PASSWORD)
 
-def fetch_clusters(base_url):
+
+def fetch_clusters():
     """Cluster verilerini almak için clusters endpoint'ine gider."""
-    response = requests.get(f"{base_url}/clusters/", headers=HEADERS, auth=AUTH, verify=False)
+    response = requests.get(f"{BASE_URL}/clusters/", headers=HEADERS, auth=AUTH, verify=False)
     response.raise_for_status()
     clusters = response.json()["entities"]
 
@@ -55,13 +51,15 @@ def fetch_clusters(base_url):
 
     return cluster_data
 
-def fetch_hosts(base_url, cluster_uuid):
+
+def fetch_hosts(cluster_uuid):
     """Cluster UUID ile host bilgilerini alır."""
-    response = requests.get(f"{base_url}/hosts/", headers=HEADERS, auth=AUTH, verify=False)
+    response = requests.get(f"{BASE_URL}/hosts/", headers=HEADERS, auth=AUTH, verify=False)
     response.raise_for_status()
     return response.json()["entities"]
 
-def fetch_host_stats(base_url, host_uuid, memory_capacity, cpu_capacity):
+
+def fetch_host_stats(host_uuid, memory_capacity, cpu_capacity):
     """Belirli bir host için historical stats verilerini alır."""
     end_time = int(time.time() * 1e6)  # Şu anki zaman (mikroseconds)
     start_time = end_time - (15 * 60 * 1e6)  # 15 dakika önce
@@ -85,7 +83,7 @@ def fetch_host_stats(base_url, host_uuid, memory_capacity, cpu_capacity):
     results = {}
     for metrics in metrics_groups:
         metrics_query = "&".join([f"metrics={metric}" for metric in metrics])
-        stats_url = f"{base_url}/hosts/{host_uuid}/stats/?{metrics_query}&start_time_in_usecs={int(start_time)}&interval_in_secs=60"
+        stats_url = f"{BASE_URL}/hosts/{host_uuid}/stats/?{metrics_query}&start_time_in_usecs={int(start_time)}&interval_in_secs=60"
 
         response = requests.get(stats_url, headers=HEADERS, auth=AUTH, verify=False)
         response.raise_for_status()
@@ -117,6 +115,7 @@ def fetch_host_stats(base_url, host_uuid, memory_capacity, cpu_capacity):
                 }
 
     return results
+
 
 def generate_insert_queries(data):
     """Veriyi INSERT sorgusu şeklinde hazırlar."""
@@ -177,100 +176,98 @@ def generate_insert_queries(data):
 
     return insert_queries
 
+
 def main():
+    # Tüm cluster bilgilerini çek
+    clusters = fetch_clusters()
+
     all_data = []
-    # Konfigürasyonda tanımlı her bir PRISM_IP için döngü kuruyoruz.
-    for prism_ip in prism_ips:
-        # Her PRISM_IP için BASE_URL dinamik olarak oluşturuluyor.
-        base_url = f"https://{prism_ip}:9440/PrismGateway/services/rest/v2.0"
+    for cluster in clusters:
+        cluster_uuid = cluster["cluster_uuid"]
 
-        # Tüm cluster bilgilerini çek
-        clusters = fetch_clusters(base_url)
+        # Host bilgilerini çek
+        hosts = fetch_hosts(cluster_uuid)
 
-        for cluster in clusters:
-            cluster_uuid = cluster["cluster_uuid"]
+        cluster_memory_capacity = 0
+        cluster_cpu_capacity = 0
+        cluster_num_vms = 0
+        cluster_storage_capacity = 0
+        cluster_storage_usage = 0
+        network_transmitted = []
+        network_received = []
+        memory_usage = []
+        cpu_usage = []
+        read_io_bandwidth = []
+        write_io_bandwidth = []
 
-            # Host bilgilerini çek
-            hosts = fetch_hosts(base_url, cluster_uuid)
+        for host in hosts:
+            host_stats = fetch_host_stats(
+                host["uuid"],
+                host["memory_capacity_in_bytes"],
+                host["cpu_capacity_in_hz"]
+            )
 
-            cluster_memory_capacity = 0
-            cluster_cpu_capacity = 0
-            cluster_num_vms = 0
-            cluster_storage_capacity = 0
-            cluster_storage_usage = 0
-            network_transmitted = []
-            network_received = []
-            memory_usage = []
-            cpu_usage = []
-            read_io_bandwidth = []
-            write_io_bandwidth = []
+            cluster_memory_capacity += host["memory_capacity_in_bytes"]
+            cluster_cpu_capacity += host["cpu_capacity_in_hz"]
+            cluster_num_vms += host["num_vms"]
 
-            for host in hosts:
-                host_stats = fetch_host_stats(
-                    base_url,
-                    host["uuid"],
-                    host["memory_capacity_in_bytes"],
-                    host["cpu_capacity_in_hz"]
-                )
+            if "hypervisor_num_transmitted_bytes" in host_stats:
+                avg_transmitted = host_stats["hypervisor_num_transmitted_bytes"]["avg"]
+                if avg_transmitted is not None:
+                    network_transmitted.append(avg_transmitted)
+            if "hypervisor_num_received_bytes" in host_stats:
+                avg_received = host_stats["hypervisor_num_received_bytes"]["avg"]
+                if avg_received is not None:
+                    network_received.append(avg_received)
 
-                cluster_memory_capacity += host["memory_capacity_in_bytes"]
-                cluster_cpu_capacity += host["cpu_capacity_in_hz"]
-                cluster_num_vms += host["num_vms"]
+            if "hypervisor_memory_usage_ppm" in host_stats:
+                memory_usage.append(host_stats["hypervisor_memory_usage_ppm"]["avg"])
+            if "hypervisor_cpu_usage_ppm" in host_stats:
+                cpu_usage.append(host_stats["hypervisor_cpu_usage_ppm"]["avg"])
 
-                if "hypervisor_num_transmitted_bytes" in host_stats:
-                    avg_transmitted = host_stats["hypervisor_num_transmitted_bytes"]["avg"]
-                    if avg_transmitted is not None:
-                        network_transmitted.append(avg_transmitted)
-                if "hypervisor_num_received_bytes" in host_stats:
-                    avg_received = host_stats["hypervisor_num_received_bytes"]["avg"]
-                    if avg_received is not None:
-                        network_received.append(avg_received)
+            if "hypervisor_read_io_bandwidth_kBps" in host_stats:
+                read_io_bandwidth.append(host_stats["hypervisor_read_io_bandwidth_kBps"]["avg"])
+            if "hypervisor_write_io_bandwidth_kBps" in host_stats:
+                write_io_bandwidth.append(host_stats["hypervisor_write_io_bandwidth_kBps"]["avg"])
 
-                if "hypervisor_memory_usage_ppm" in host_stats:
-                    memory_usage.append(host_stats["hypervisor_memory_usage_ppm"]["avg"])
-                if "hypervisor_cpu_usage_ppm" in host_stats:
-                    cpu_usage.append(host_stats["hypervisor_cpu_usage_ppm"]["avg"])
+            cluster_storage_capacity += int(host["usage_stats"]["storage.capacity_bytes"])
+            cluster_storage_usage += int(host["usage_stats"]["storage.usage_bytes"])
 
-                if "hypervisor_read_io_bandwidth_kBps" in host_stats:
-                    read_io_bandwidth.append(host_stats["hypervisor_read_io_bandwidth_kBps"]["avg"])
-                if "hypervisor_write_io_bandwidth_kBps" in host_stats:
-                    write_io_bandwidth.append(host_stats["hypervisor_write_io_bandwidth_kBps"]["avg"])
+        # Liste boş değilse ortalama hesapla
+        cluster_data = {
+            "datacenter_name": cluster["datacenter_name"],
+            "cluster_name": cluster["cluster_name"],
+            "cluster_uuid": cluster_uuid,
+            "num_nodes": cluster["num_nodes"],
+            "total_memory_capacity": cluster_memory_capacity,
+            "total_cpu_capacity": cluster_cpu_capacity,
+            "total_vms": cluster_num_vms,
+            "network_transmitted_avg": statistics.mean(network_transmitted) if network_transmitted else None,
+            "network_received_avg": statistics.mean(network_received) if network_received else None,
+            "storage_capacity": cluster_storage_capacity,
+            "storage_usage": cluster_storage_usage,
+            "memory_usage_min": min(memory_usage) if memory_usage else None,
+            "memory_usage_max": max(memory_usage) if memory_usage else None,
+            "memory_usage_avg": statistics.mean(memory_usage) if memory_usage else None,
+            "cpu_usage_min": min(cpu_usage) if cpu_usage else None,
+            "cpu_usage_max": max(cpu_usage) if cpu_usage else None,
+            "cpu_usage_avg": statistics.mean(cpu_usage) if cpu_usage else None,
+            "read_io_bandwidth_min": min([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
+            "read_io_bandwidth_max": max([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
+            "read_io_bandwidth_avg": statistics.mean([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
 
-                cluster_storage_capacity += int(host["usage_stats"]["storage.capacity_bytes"])
-                cluster_storage_usage += int(host["usage_stats"]["storage.usage_bytes"])
+            "write_io_bandwidth_min": min([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
+            "write_io_bandwidth_max": max([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
+            "write_io_bandwidth_avg": statistics.mean([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
 
-            cluster_data = {
-                "datacenter_name": cluster["datacenter_name"],
-                "cluster_name": cluster["cluster_name"],
-                "cluster_uuid": cluster_uuid,
-                "num_nodes": cluster["num_nodes"],
-                "total_memory_capacity": cluster_memory_capacity,
-                "total_cpu_capacity": cluster_cpu_capacity,
-                "total_vms": cluster_num_vms,
-                "network_transmitted_avg": statistics.mean(network_transmitted) if network_transmitted else None,
-                "network_received_avg": statistics.mean(network_received) if network_received else None,
-                "storage_capacity": cluster_storage_capacity,
-                "storage_usage": cluster_storage_usage,
-                "memory_usage_min": min(memory_usage) if memory_usage else None,
-                "memory_usage_max": max(memory_usage) if memory_usage else None,
-                "memory_usage_avg": statistics.mean(memory_usage) if memory_usage else None,
-                "cpu_usage_min": min(cpu_usage) if cpu_usage else None,
-                "cpu_usage_max": max(cpu_usage) if cpu_usage else None,
-                "cpu_usage_avg": statistics.mean(cpu_usage) if cpu_usage else None,
-                "read_io_bandwidth_min": min([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
-                "read_io_bandwidth_max": max([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
-                "read_io_bandwidth_avg": statistics.mean([v for v in read_io_bandwidth if v is not None]) if read_io_bandwidth and any(v is not None for v in read_io_bandwidth) else None,
-                "write_io_bandwidth_min": min([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
-                "write_io_bandwidth_max": max([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
-                "write_io_bandwidth_avg": statistics.mean([v for v in write_io_bandwidth if v is not None]) if write_io_bandwidth and any(v is not None for v in write_io_bandwidth) else None,
-                "prism_ip": prism_ip
-            }
-            all_data.append(cluster_data)
+        }
+        all_data.append(cluster_data)
 
     # INSERT sorgularını oluştur ve yazdır
     insert_queries = generate_insert_queries(all_data)
     for query in insert_queries:
         print(query)
+
 
 if __name__ == "__main__":
     main()
