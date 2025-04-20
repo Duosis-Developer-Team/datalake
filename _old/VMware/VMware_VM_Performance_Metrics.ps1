@@ -17,17 +17,8 @@ $VMwarePort = $config.VmWare.VMwarePort
 $VMware_userName = $config.VmWare.VMware_userName
 $VMware_password = $config.VmWare.VMware_password
 
-if ($VMwareIP -ne "") {
-    $vmwareIps = $VMwareIP -split "," | ForEach-Object { $_.Trim() }
-} else {
-    $vmwareIps = @()
-}
 
-# Her bir IP adresi için işlemleri gerçekleştir ve çıktıyı ver
-foreach ($ip in $vmwareIps) {
-
-
-$VMware_baseURL = "https://" + $ip
+$VMware_baseURL = "https://" + $VMwareIP
 $contentType = "application/json"
 #############################################################################################
 ######################## Disable SSL certificate checks ########################
@@ -55,7 +46,7 @@ function getVmwareApiSession ($VMware_userName, $VMware_password){
     return $content.Substring(1, $content.Length - 2)
   }
   catch {
-#    Write-Host "Failed to retrieve VMware session: $($_.Exception.Message)"
+    Write-Host "Failed to retrieve VMware session: $($_.Exception.Message)"
     return $null
   }
 }
@@ -64,7 +55,7 @@ $xVMwareSession = getVmwareApiSession $VMware_userName $VMware_password
 ########################################################################################
 
 ######################## VMWARE POWERCLI CONNECT ########################
-$serverConnection = Connect-VIServer -Server $ip -Protocol https -User $VMware_userName -Password $VMware_password
+$serverConnection = Connect-VIServer -Server $VMwareIP -Protocol https -User $VMware_userName -Password $VMware_password
 ########################################################################################
 
 ######################## VMWARE HEADER ########################
@@ -197,5 +188,5 @@ $output | ForEach-Object {
     "UUID: $($_.UUID)"
     "BootTime: $($_.BootTime)"
     ""
-} #| Tee-Object -FilePath "/nifiScripts/vm15MinSummary.txt" -Encoding utf8
-}
+} | Tee-Object -FilePath "/Datalake_Project/vm15MinSummary.txt" -Encoding utf8
+

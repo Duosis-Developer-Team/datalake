@@ -1,6 +1,6 @@
 {
     "Veeam": {
-        "IP": "192.168.1.1",
+        "IP": "",
         "username": "veeam_user",
         "password": "veeam_pass"
     },
@@ -36,7 +36,7 @@
         "debug": 1
     },
     "Nutanix": {
-        "PRISM_IP" : "10.34.2.205", 
+        "PRISM_IP" : "", 
         "USERNAME" : "zabbix@blt.vc",
         "PASSWORD" : "2u4Mzf7RJC"  
     },
