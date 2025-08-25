@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diskStatsColl
+xmlns="http://ibm.com/storage/management/performance/api/2006/01/nodeStats"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://ibm.com/storage/management/performance/api/2006/01/nodeStats schema/SVCPerfStatsN.xsd" scope="node" id="node1" cluster="dc13storage1" node_id="0x0000000000000007" cluster_id="0x0000020420404b0a" sizeUnits="1B" timeUnits="msec" contains="nodeStats" timestamp="2025-07-31 10:15:39" timezone="GMT+3:00">
+<cpu busy="3096557549" limited="0" system="3096557549" comp="0"/>
+<cpu_core id="0" system="4076628339" comp="0"/>
+<cpu_core id="1" system="2584256654" comp="0"/>
+<cpu_core id="2" system="3239642405" comp="0"/>
+<cpu_core id="3" system="2997162333" comp="0"/>
+<cpu_core id="4" system="2801480695" comp="0"/>
+<cpu_core id="5" system="3474402786" comp="0"/>
+<cpu_core id="6" system="2797321133" comp="0"/>
+<cpu_core id="7" system="2919070352" comp="0"/>
+<cpu_core id="8" system="2652919678" comp="0"/>
+<cpu_core id="9" system="2594091846" comp="0"/>
+<cpu_core id="10" system="2520903867" comp="0"/>
+<cpu_core id="11" system="3168037058" comp="0"/>
+<cpu_core id="12" system="3172707754" comp="0"/>
+<cpu_core id="13" system="3401506322" comp="0"/>
+<cpu_core id="14" system="4048231269" comp="0"/>
+<cpu_core id="15" system="0" comp="0"/>
+<dimm id="5" loc="CPU1_A0" manu="Hynix" sn="930A57AE" ce="0"/>
+<dimm id="8" loc="CPU1_D0" manu="Hynix" sn="930A6112" ce="0"/>
+<dimm id="17" loc="CPU2_D0" manu="Hynix" sn="930A5803" ce="0"/>
+<dimm id="20" loc="CPU2_A0" manu="Hynix" sn="930A60C0" ce="0"/>
+<node id="node2" cluster="dc13storage1" node_id="0x0000000000000002" cluster_id="0x0000020420404b0a" 
+ro="844211504535" wo="844028742063" rb="2073669391287958" lrb="5447859140616793" 
+wb="2890361911875343" lwb="7402054114732926" re="237433989" we="121988440753" 
+rq="20844889348" wq="264540197776"/>
+<node id="node4" cluster="dc13storage1" node_id="0x0000000000000004" cluster_id="0x0000020420404b0a" 
+ro="44617090921" wo="31721249651" rb="882704871192405" lrb="889396206627555" 
+wb="296046211634943" lwb="296083201189983" re="14446564" we="5029853525" 
+rq="1438341328" wq="7650542877"/>
+<node id="node3" cluster="dc13storage1" node_id="0x0000000000000003" cluster_id="0x0000020420404b0a" 
+ro="55864237210" wo="43408100812" rb="1091579427965448" lrb="1098005363047646" 
+wb="514107514848504" lwb="510096457750190" re="17609231" we="7596978102" 
+rq="1988466005" wq="11807054576"/>
+<node id="node2" cluster="IBM9500DC13" node_id="0x0000000000000002" cluster_id="0x00000204e080b76a" 
+ro="1810142023" wo="2132009031" rb="169670409328" lrb="169658624800" 
+wb="33414505590012" lwb="43090614750256" re="608585" we="368635672" 
+rq="83246063" wq="1392786717"/>
+<node id="node1" cluster="IBM9500DC13" node_id="0x0000000000000001" cluster_id="0x00000204e080b76a" 
+ro="1840703901" wo="2140836326" rb="173377331104" lrb="173365521057" 
+wb="33415441967476" lwb="43091509175161" re="606392" we="379931892" 
+rq="86156072" wq="1407491218"/>
+<node id="node2" cluster="IBM7K01DC13" node_id="0x0000000000000002" cluster_id="0x0000020420612ca0" 
+ro="6745886197" wo="7371832178" rb="14476281287372" lrb="19743180437692" 
+wb="98469569491148" lwb="131416657916616" re="2269702" we="1506962346" 
+rq="331631246" wq="4279441532"/>
+<node id="node1" cluster="IBM7K01DC13" node_id="0x0000000000000001" cluster_id="0x0000020420612ca0" 
+ro="7427470704" wo="7901967410" rb="14063597642356" lrb="19144318366021" 
+wb="98520788485648" lwb="131468204461863" re="2478769" we="1617798479" 
+rq="368418762" wq="4389256900"/>
+<node id="node2" cluster="IBM7K01DC13" node_id="0x0000000000000002" cluster_id="0x0000020420212c06" 
+ro="3271" wo="3277" rb="12941276" lrb="3440420" 
+wb="12916480" lwb="3474392" re="1" we="12270102" 
+rq="33" wq="798"/>
+<node id="node1" cluster="IBM7K01DC13" node_id="0x0000000000000001" cluster_id="0x0000020420212c06" 
+ro="548388" wo="537375" rb="1167324296" lrb="183910759" 
+wb="1168200916" lwb="324243137" re="243" we="12339529" 
+rq="5458" wq="89136"/>
+<messages_stats node_id="0">
+<messages type="sent" period="all">
+<msg name="lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_data" count="0" total_time="0" total_size="0"/>
+<msg name="unlock" count="0" total_time="0" total_size="0"/>
+<msg name="backup_write_done" count="0" total_time="0" total_size="0"/>
+<msg name="soften" count="0" total_time="0" total_size="0"/>
+<msg name="soften_done" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_ref_lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_confirm_lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_lookup" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_add" count="0" total_time="0" total_size="0"/>
+<msg name="update_tracker" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_dec_lookup" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_multi" count="0" total_time="0" total_size="0"/>
+<msg name="invals_update" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_multi2" count="0" total_time="0" total_size="0"/>
+<msg name="invals_update2" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_multi_add" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_multi_lookup" count="0" total_time="0" total_size="0"/>
+</messages>
+<messages type="received" period="all">
+<msg name="lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_data" count="0" total_time="0" total_size="0"/>
+<msg name="unlock" count="0" total_time="0" total_size="0"/>
+<msg name="backup_write_done" count="0" total_time="0" total_size="0"/>
+<msg name="soften" count="0" total_time="0" total_size="0"/>
+<msg name="soften_done" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_ref_lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_confirm_lookup_lock" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_lookup" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_add" count="0" total_time="0" total_size="0"/>
+<msg name="update_tracker" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_dec_lookup" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_multi" count="0" total_time="0" total_size="0"/>
+<msg name="invals_update" count="0" total_time="0" total_size="0"/>
+<msg name="bt_update_multi2" count="0" total_time="0" total_size="0"/>
+<msg name="invals_update2" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_multi_add" count="0" total_time="0" total_size="0"/>
+<msg name="dedup_db_multi_lookup" count="0" total_time="0" total_size="0"/>
+</messages>
+</messages_stats>
+<gc>
+<repository id="0" mdg="65535"><cm mbs="0"/><nm mbs="0"/><rm mbs="0"/><mm mbs="0"/><ext col="0"/><rec mbs="0"/><rec apr="0"/></repository>
+<repository id="1" mdg="65535"><cm mbs="0"/><nm mbs="0"/><rm mbs="0"/><mm mbs="0"/><ext col="0"/><rec mbs="0"/><rec apr="0"/></repository>
+<repository id="2" mdg="65535"><cm mbs="0"/><nm mbs="0"/><rm mbs="0"/><mm mbs="0"/><ext col="0"/><rec mbs="0"/><rec apr="0"/></repository>
+<repository id="3" mdg="65535"><cm mbs="0"/><nm mbs="0"/><rm mbs="0"/><mm mbs="0"/><ext col="0"/><rec mbs="0"/><rec apr="0"/></repository>
+</gc>
+<uca><ca dav="1192" dcn="926533" dmx="23095" dmn="1"
+sav="295" scn="78634" smx="9983" smn="16"
+pav="0" pcn="0" pmx="0" pmn="0"
+wfav="0" wfmx="11" wfmn="0"
+rfav="6" rfmx="8" rfmn="6"
+pp="0"
+hpt="10021" ppt="3987" opt="0" npt="0"
+apt="0" cpt="0" bpt="0" hrpt="0"
+hpt_a="0" ppt_a="0" opt_a="0" npt_a="0"
+apt_a="0" cpt_a="4200" bpt_a="26680" hrpt_a="0"
+m="0" mn="0"/><partition id="0" mdg="0"><ca dav="892" dcn="303613" dmx="23095" dmn="1"
+fav="0" fmx="23" fmn="0"
+pp="0"/>
+</partition>
+<partition id="1" mdg="1"><ca dav="337" dcn="76" dmx="14066" dmn="1"
+fav="0" fmx="4" fmn="0"
+pp="0"/>
+</partition>
+<partition id="2" mdg="2"><ca dav="0" dcn="0" dmx="0" dmn="0"
+fav="0" fmx="0" fmn="0"
+pp="0"/>
+</partition>
+<partition id="3" mdg="3"><ca dav="0" dcn="0" dmx="0" dmn="0"
+fav="0" fmx="0" fmn="0"
+pp="0"/>
+</partition>
+<partition id="4" mdg="4"><ca dav="1338" dcn="622844" dmx="16812" dmn="1"
+fav="0" fmx="29" fmn="0"
+pp="0"/>
+</partition>
+</uca><lca><ca dav="1657" dcn="119867" dmx="69907" dmn="45"
+sav="390" scn="43255" smx="13875" smn="14"
+pav="502" pcn="36474" pmx="15658" pmn="18"
+wfav="24" wfmx="37" wfmn="21"
+rfav="78" rfmx="80" rfmn="77"
+pp="0"
+hpt="0" ppt="0" opt="0" npt="0"
+apt="0" cpt="0" bpt="0" hrpt="0"
+hpt_a="0" ppt_a="0" opt_a="0" npt_a="0"
+apt_a="0" cpt_a="1221412" bpt_a="9156310" hrpt_a="0"
+m="717902" mn="0"/><partition id="0" mdg="0"><ca dav="602" dcn="75725" dmx="18312" dmn="45"
+fav="34" fmx="73" fmn="29"
+dfav="9" dfmx="148" dfmn="1"
+dtav="9" dtmx="122" dtmn="0"
+pp="0"/>
+</partition>
+<partition id="1" mdg="1"><ca dav="9917" dcn="9" dmx="27372" dmn="815"
+fav="8" fmx="12" fmn="7"
+dfav="1" dfmx="5" dfmn="1"
+dtav="0" dtmx="6" dtmn="0"
+pp="0"/>
+</partition>
+<partition id="2" mdg="2"><ca dav="0" dcn="0" dmx="0" dmn="0"
+fav="0" fmx="0" fmn="0"
+dfav="0" dfmx="0" dfmn="0"
+dtav="0" dtmx="6" dtmn="0"
+pp="0"/>
+</partition>
+<partition id="3" mdg="3"><ca dav="0" dcn="0" dmx="0" dmn="0"
+fav="0" fmx="0" fmn="0"
+dfav="0" dfmx="0" dfmn="0"
+dtav="0" dtmx="0" dtmn="0"
+pp="0"/>
+</partition>
+<partition id="4" mdg="4"><ca dav="3467" dcn="44133" dmx="69907" dmn="108"
+fav="37" fmx="83" fmn="33"
+dfav="124" dfmx="573" dfmn="1"
+dtav="89" dtmx="515" dtmn="0"
+pp="0"/>
+</partition>
+</lca><odx otrec="0"/>
+<port id="1"
+type="FC"
+type_id="1"
+wwpn="0x5005076810112585"
+fc_wwpn="0x5005076810112585"
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="1910895455013085" hbr="927825415389616" het="0" her="31501939515"
+cbt="1449984" cbr="2837966" cet="7405" cer="0"
+lnbt="211508900383052" lnbr="498401134799522" lnet="21693772515" lner="34814216251"
+rmbt="136510788549314" rmbr="16832782205880" rmet="11999596238" rmer="13210552866"
+dtdt="325163766677" dtdc="7170521997" dtdm="136894644029"
+dtdt2="325163766677" dtdc2="7170521997"
+lf="4" lsy="6" lsi="0" pspe="0"
+itw="208" icrc="45" bbcz="0"
+tmp="45" tmpht="85"
+txpwr="477" txpwrlt="126"
+rxpwr="428" rxpwrlt="31"
+hsr="203" hsw="266" har="5" haw="90"
+/>
+<port id="2"
+type="FC"
+type_id="2"
+wwpn="0x5005076810122585"
+fc_wwpn="0x5005076810122585"
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="2633887092657820" hbr="873647557603536" het="0" her="51474691830"
+cbt="589824" cbr="2566137" cet="7671" cer="0"
+lnbt="199136331988770" lnbr="497961857278302" lnet="19979151939" lner="10385165739"
+rmbt="132711155501435" rmbr="16689880191004" rmet="12007237230" rmer="13095695298"
+dtdt="292455793451" dtdc="6649476366" dtdm="154185986005"
+dtdt2="292455793451" dtdc2="6649476366"
+lf="2" lsy="3" lsi="0" pspe="0"
+itw="204" icrc="40" bbcz="0"
+tmp="45" tmpht="85"
+txpwr="507" txpwrlt="126"
+rxpwr="482" rxpwrlt="31"
+hsr="213" hsw="281" har="2" haw="92"
+/>
+<port id="3"
+type="FC"
+type_id="3"
+wwpn="0x5005076810132585"
+fc_wwpn="0x5005076810132585"
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="1909559909229933" hbr="876157103276156" het="0" her="30889118620"
+cbt="0" cbr="2631382" cet="6830" cer="0"
+lnbt="208713967052917" lnbr="501416051238373" lnet="20991113999" lner="10682294684"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+dtdt="174810749237" dtdc="4741576430" dtdm="98905416952"
+dtdt2="174810749237" dtdc2="4741576430"
+lf="2" lsy="3" lsi="0" pspe="0"
+itw="112" icrc="0" bbcz="0"
+tmp="44" tmpht="85"
+txpwr="480" txpwrlt="126"
+rxpwr="431" rxpwrlt="31"
+hsr="74" hsw="89" har="0" haw="1"
+/>
+<port id="4"
+type="FC"
+type_id="4"
+wwpn="0x5005076810142585"
+fc_wwpn="0x5005076810142585"
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="2175193383545299" hbr="960556272775368" het="0" her="32983266664"
+cbt="0" cbr="2859818" cet="6583" cer="0"
+lnbt="208950364956976" lnbr="501543685702200" lnet="20093360365" lner="13350688072"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+dtdt="182199521736" dtdc="4873596949" dtdm="111693809926"
+dtdt2="182199521736" dtdc2="4873596949"
+lf="2" lsy="3" lsi="0" pspe="0"
+itw="120" icrc="0" bbcz="0"
+tmp="44" tmpht="85"
+txpwr="482" txpwrlt="126"
+rxpwr="439" rxpwrlt="31"
+hsr="31" hsw="98" har="0" haw="414"
+/>
+<port id="5"
+type="SAS"
+type_id="1"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn="0x5005076810312585"
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="677964181180856" cbr="927087229484001" cet="11804216145" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+idw="13" dis="12" cv="12" lsy="0" 
+prf="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="6"
+type="SAS"
+type_id="2"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn="0x5005076810322585"
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+idw="0" dis="0" cv="0" lsy="0" 
+prf="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="7"
+type="SAS"
+type_id="3"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn="0x5005076810332585"
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="3729168097897559" cbr="16829336358270430" cet="161071866782" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+idw="14" dis="14" cv="10" lsy="0" 
+prf="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="8"
+type="SAS"
+type_id="4"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn="0x5005076810342585"
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+idw="0" dis="0" cv="0" lsy="0" 
+prf="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="9"
+type="PCIe"
+type_id="1"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="737357" hbr="188416" het="0" her="3363"
+cbt="258048" cbr="22946429" cet="4218" cer="0"
+lnbt="3054918575044264" lnbr="2232598989053271" lnet="460874730843" lner="475843717344"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+/>
+<port id="10"
+type="NVMe"
+type_id="1"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+/>
+<port id="11"
+type="NVMe"
+type_id="2"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+/>
+<port id="12"
+type="iSCSI"
+type_id="1"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn="iqn.1986-03.com.ibm:2145.dc13storage1.node1"
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="13"
+type="iSCSI"
+type_id="2"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn="iqn.1986-03.com.ibm:2145.dc13storage1.node2"
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+hsr="0" hsw="0" har="0" haw="0"
+/>
+<port id="14"
+type="IPREP"
+type_id="1"
+wwpn="0x0000000000000000"
+fc_wwpn=""
+fcoe_wwpn=""
+sas_wwn=""
+iqn=""
+hbt="0" hbr="0" het="0" her="0"
+cbt="0" cbr="0" cet="0" cer="0"
+lnbt="0" lnbr="0" lnet="0" lner="0"
+rmbt="0" rmbr="0" rmet="0" rmer="0"
+iptx="0" iprx="0" ipre="0" ipsz="0"
+ipbz="0" iprt="0" iptc="0" iprc="0"
+/>
+</diskStatsColl>

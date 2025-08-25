@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diskStatsColl
+xmlns="http://ibm.com/storage/management/performance/api/2003/04/diskStats"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://ibm.com/storage/management/performance/api/2003/04/diskStats schema/SVCPerfStats.xsd" scope="node" id="node1" cluster="dc13storage1" node_id="0x0000000000000007" cluster_id="0x0000020420404b0a" sizeUnits="512B" timeUnits="msec" contains="managedDiskStats" timestamp="2025-07-31 10:25:39" timezone="GMT+3:00">
+<mdsk idx="0"
+ id="mdisk0" ro="16715882741" wo="7859923758" rb="3465417396418" wb="1521732952367" re="8148060533" we="8746968392" rq="8148060533" wq="8746968392"
+ ure="8149512088274" uwe="8748526641515" urq="8149512088274" uwq="8748526641515"
+ pre="7293" pwe="18172" pro="7293" pwo="18172">
+<ca dav="619" dtav="101" dfav="9" />
+</mdsk>
+<mdsk idx="16"
+ id="mdisk1" ro="3089902735" wo="1475311594" rb="1072141877172" wb="721488641239" re="25706580325" we="20625451461" rq="25706580325" wq="20625451461"
+ ure="25711159882724" uwe="20629125829754" urq="25711159882724" uwq="20629125829754"
+ pre="0" pwe="148653" pro="0" pwo="148653">
+<ca dav="92743" dtav="670" dfav="2" />
+</mdsk>
+<mdsk idx="32"
+ id="mdisk2" ro="2531012284" wo="878937454" rb="905594108224" wb="563386245063" re="17772398606" we="9648871692" rq="17772398606" wq="9648871692"
+ ure="17775564710980" uwe="9650590612372" urq="17775564710980" uwq="9650590612372"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="48"
+ id="mdisk3" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="64"
+ id="mdisk4" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="80"
+ id="mdisk5" ro="722730878" wo="166622744" rb="210816881279" wb="281424489835" re="877568114" we="322152719" rq="877568114" wq="322152719"
+ ure="877724450370" uwe="322210110134" urq="877724450370" uwq="322210110134"
+ pre="0" pwe="2928" pro="0" pwo="2928">
+<ca dav="686" dtav="102" dfav="8" />
+</mdsk>
+<mdsk idx="96"
+ id="mdisk6" ro="9087949657" wo="2797755434" rb="3021243375911" wb="1252339564788" re="84750846255" we="39617630760" rq="84750846255" wq="39617630760"
+ ure="84765944387619" uwe="39624688533260" urq="84765944387619" uwq="39624688533260"
+ pre="15679" pwe="45783" pro="15679" pwo="45783">
+<ca dav="15231" dtav="39" dfav="3" />
+</mdsk>
+<mdsk idx="112"
+ id="mdisk7" ro="12045339952" wo="2822751651" rb="2079208013671" wb="764436080935" re="6126230694" we="2763318871" rq="6126230694" wq="2763318871"
+ ure="6127322065760" uwe="2763811149363" urq="6127322065760" uwq="2763811149363"
+ pre="5029" pwe="10382" pro="5029" pwo="10382">
+<ca dav="691" dtav="126" dfav="10" />
+</mdsk>
+<mdsk idx="128"
+ id="mdisk8" ro="50334089981" wo="6146869152" rb="6961454726554" wb="1945132389200" re="65000534047" we="30404039438" rq="65000534047" wq="30404039438"
+ ure="65012113714977" uwe="30409455835022" urq="65012113714977" uwq="30409455835022"
+ pre="33655" pwe="43648" pro="33655" pwo="43648">
+<ca dav="761" dtav="516" dfav="6" />
+</mdsk>
+<mdsk idx="144"
+ id="mdisk9" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="160"
+ id="mdisk10" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="176"
+ id="mdisk11" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="192"
+ id="mdisk12" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="208"
+ id="mdisk13" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="224"
+ id="mdisk14" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="240"
+ id="mdisk15" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+<mdsk idx="256"
+ id="mdisk16" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0">
+<ca dav="0" dtav="0" dfav="0" />
+</mdsk>
+</diskStatsColl>

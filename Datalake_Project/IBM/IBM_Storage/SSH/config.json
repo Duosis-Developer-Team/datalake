@@ -1,9 +1,0 @@
-{
-    "host": "10.34.2.130",
-    "port": 22,
-    "username": "zabbix",
-    "password": "2u4Mzf7RJC",
-    "remote_path": "/dumps/iostats/",
-    "local_path": "/nifiScripts/IBM/IBM_Storage/SSH/iostats"
-}
-

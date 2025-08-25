@@ -1,0 +1,170 @@
+dsfsdfwawimport requests
+import jsasdasdon
+from urllib.parse import quote
+
+# Read configuration file
+json_file_path = "/Datalake_Project/configuration_file.json"
+with open(json_file_path, "r") as file:
+    config = json.load(file)
+
+# Nutanix Prism API credentials
+nutanix_config = config["Nutanix"]
+
+# PRISM_IP may contain multiple IPs; split them
+prism_ip_string = nutanix_config["PRISM_IP"]
+if prism_ip_string:
+    prism_ips = [ip.strip() for ip in prism_ip_string.split(",") if ip.strip()]
+else:
+    prism_ips = []
+
+USERNAME = nutanix_config["USERNAME"]
+PASSWORD = nutanix_config["PASSWORD"]
+AUTH = (USERNAME, PASSWORD)
+
+# Disable SSL warnings
+requests.packages.urllib3.disable_warnings()
+#https://10.34.2.205:9440/PrismGateway/services/rest/v1/protection_domains/Bulutistan-1Days_14RP/dr_snapshots?fullDetails=true&_=1744362399259&projection=stats%2Calerts&filterCriteria=state!%3DEXPIRED
+def to_sql_safe_string(value):
+    """
+    If value is None or equals (case-insensitive) "none", return the literal string "null".
+    Otherwise, return the original value.
+    """
+    if value is None:
+        return "null"
+    if isinstance(value, str) and value.strip().lower() == "none":
+        return "null"
+    return value
+
+def fetch_snapshot_info(prism_ip):
+    """
+    Fetch snapshot data from the dr_snapshots endpoint at the given prism_ip.
+    Retains only the desired fields:
+      - protection_domain_name
+      - state
+      - missing_entities
+      - size_in_bytes
+      - vm_name (collected from the nested "vms" list)
+    Returns a list of dictionaries.
+    """
+    url = f"https://{prism_ip}:9440/PrismGateway/services/rest/v2.0/protection_domains/dr_snapshots"
+    response = requests.get(url, auth=AUTH, verify=False)
+    response.raise_for_status()
+    data = response.json()
+
+    snapshots = []
+    for entity in data.get("entities", []):
+        pd_name = to_sql_safe_string(entity.get("protection_domain_name"))
+        state = to_sql_safe_string(entity.get("state"))
+        # If missing_entities is None, default it to an empty list
+        missing_entities = entity.get("missing_entities") or []
+        size_in_bytes = entity.get("size_in_bytes")
+        # Ensure that vms is a list even if its value is None
+        vms = entity.get("vms") or []
+        vm_names = []
+        for vm in vms:
+            if isinstance(vm, dict):
+                vm_name = to_sql_safe_string(vm.get("vm_name"))
+                if vm_name and vm_name != "null":
+                    vm_names.append(vm_name)
+        snapshot_record = {
+            "protection_domain_name": pd_name,
+            "state": state,
+            "missing_entities": missing_entities,
+            "size_in_bytes": size_in_bytes,
+            "vm_names": vm_names
+        }
+        snapshots.append(snapshot_record)
+    return snapshots
+
+def fetch_pd_schedules(prism_ip, pd_name):
+    """
+    Fetch schedule data for a given protection domain (pd_name) by calling its schedules endpoint.
+    Retains only the desired fields:
+      - pd_name
+      - type
+      - every_nth
+      - start_times_in_usecs
+      - end_time_in_usecs
+      - retention_policy --> local_max_snapshots, remote_max_snapshots
+    Returns a list of dictionaries.
+    """
+    encoded_pd_name = quote(pd_name)
+    url = f"https://{prism_ip}:9440/PrismGateway/services/rest/v2.0/protection_domains/{encoded_pd_name}/schedules"
+    
+    try:
+        response = requests.get(url, auth=AUTH, verify=False)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        print(f"Error fetching schedules for {pd_name}: {e}")
+        return []
+    
+    # Handle the case where the response is directly a list instead of a dict with "entities"
+    if isinstance(data, list):
+        schedule_entities = data
+    else:
+        schedule_entities = data.get("entities", [])
+    
+    schedules = []
+    for sched in schedule_entities:
+        # Ensure each schedule entry is a dictionary
+        if not isinstance(sched, dict):
+            print(f"Skipping schedule entry for {pd_name} due to unexpected format: {sched}")
+            continue
+        try:
+            sched_pd_name = to_sql_safe_string(sched.get("pd_name"))
+            sched_type = to_sql_safe_string(sched.get("type"))
+            every_nth = sched.get("every_nth")  # might be numeric
+            start_times = sched.get("start_times_in_usecs")
+            end_time = sched.get("end_time_in_usecs")
+    
+            # Ensure retention_policy is a dictionary; if not, default it to an empty dict
+            retention_policy = sched.get("retention_policy", {})
+            if not isinstance(retention_policy, dict):
+                retention_policy = {}
+            local_max = retention_policy.get("local_max_snapshots")
+            remote_max = retention_policy.get("remote_max_snapshots")
+    
+            schedule_record = {
+                "pd_name": sched_pd_name,
+                "type": sched_type,
+                "every_nth": every_nth,
+                "start_times_in_usecs": start_times,
+                "end_time_in_usecs": end_time,
+                "local_max_snapshots": local_max,
+                "remote_max_snapshots": remote_max
+            }
+            schedules.append(schedule_record)
+        except Exception as proc_err:
+            print(f"Error processing a schedule for {pd_name}: {proc_err}")
+            continue
+    
+    return schedules
+
+
+def main():
+    for prism_ip in prism_ips:
+        print(f"Processing Prism IP: {prism_ip}")
+        try:
+            snapshot_records = fetch_snapshot_info(prism_ip)
+            print(f"Snapshots for {prism_ip}:")
+            for snap in snapshot_records:
+                print(f"Snapshots for {snap.get('protection_domain_name')}")
+                print(json.dumps(snap, indent=4))
+                pd_name = snap.get("protection_domain_name")
+                # If pd_name is not "null", fetch schedules for this protection domain.
+                if pd_name and pd_name != "null":
+                    try:
+                        schedule_records = fetch_pd_schedules(prism_ip, pd_name)
+                        print(f"Schedules for Protection Domain '{pd_name}':")
+                        for sched in schedule_records:
+                            print(json.dumps(sched, indent=4))
+                    except Exception as sched_err:
+                        print(f"Error fetching schedules for {pd_name}: {sched_err}")
+                else:
+                    print("Protection domain name is null, skipping schedules.")
+        except Exception as e:
+            print(f"Error processing {prism_ip}: {e}")
+
+if __name__ == "__main__":
+    main()

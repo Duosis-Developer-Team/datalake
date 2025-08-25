@@ -1,0 +1,1474 @@
+[
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "compression_cpu_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "cpu_pc",
+    "stat_current": "3",
+    "stat_peak": "32",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "fc_mb",
+    "stat_current": "21",
+    "stat_peak": "1157",
+    "stat_peak_time": "250731105641"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "fc_io",
+    "stat_current": "3056",
+    "stat_peak": "55947",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "sas_mb",
+    "stat_current": "11",
+    "stat_peak": "1335",
+    "stat_peak_time": "250731105821"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "sas_io",
+    "stat_current": "70",
+    "stat_peak": "16342",
+    "stat_peak_time": "250731105606"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iscsi_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iscsi_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "write_cache_pc",
+    "stat_current": "24",
+    "stat_peak": "35",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "total_cache_pc",
+    "stat_current": "79",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105636"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_mb",
+    "stat_current": "18",
+    "stat_peak": "967",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_io",
+    "stat_current": "50",
+    "stat_peak": "10305",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_ms",
+    "stat_current": "2.034",
+    "stat_peak": "7.216",
+    "stat_peak_time": "250731105811"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_mb",
+    "stat_current": "15",
+    "stat_peak": "582",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_io",
+    "stat_current": "137",
+    "stat_peak": "7250",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_ms",
+    "stat_current": "0.566",
+    "stat_peak": "1.232",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_mb",
+    "stat_current": "97",
+    "stat_peak": "2550",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_io",
+    "stat_current": "864",
+    "stat_peak": "36580",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_ms",
+    "stat_current": "0.455",
+    "stat_peak": "6.448",
+    "stat_peak_time": "250731105506"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "966",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_r_io",
+    "stat_current": "5",
+    "stat_peak": "1975",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_r_ms",
+    "stat_current": "0.189",
+    "stat_peak": "17.221",
+    "stat_peak_time": "250731105811"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_w_mb",
+    "stat_current": "18",
+    "stat_peak": "566",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_w_io",
+    "stat_current": "45",
+    "stat_peak": "10305",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "vdisk_w_ms",
+    "stat_current": "2.275",
+    "stat_peak": "7.448",
+    "stat_peak_time": "250731105636"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "581",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_r_io",
+    "stat_current": "6",
+    "stat_peak": "7210",
+    "stat_peak_time": "250731105716"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_r_ms",
+    "stat_current": "0.112",
+    "stat_peak": "0.695",
+    "stat_peak_time": "250731105506"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_w_mb",
+    "stat_current": "15",
+    "stat_peak": "381",
+    "stat_peak_time": "250731105641"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_w_io",
+    "stat_current": "130",
+    "stat_peak": "6071",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "mdisk_w_ms",
+    "stat_current": "0.588",
+    "stat_peak": "1.233",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_r_mb",
+    "stat_current": "58",
+    "stat_peak": "1726",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_r_io",
+    "stat_current": "454",
+    "stat_peak": "18922",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_r_ms",
+    "stat_current": "0.682",
+    "stat_peak": "6.684",
+    "stat_peak_time": "250731105511"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_w_mb",
+    "stat_current": "39",
+    "stat_peak": "930",
+    "stat_peak_time": "250731105641"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_w_io",
+    "stat_current": "410",
+    "stat_peak": "17656",
+    "stat_peak_time": "250731105526"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "drive_w_ms",
+    "stat_current": "0.205",
+    "stat_peak": "0.282",
+    "stat_peak_time": "250731105601"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iplink_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iplink_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iplink_comp_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "cloud_up_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "cloud_up_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "cloud_down_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "cloud_down_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iser_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "7",
+    "node_name": "node1",
+    "stat_name": "iser_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105846"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "compression_cpu_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "cpu_pc",
+    "stat_current": "4",
+    "stat_peak": "12",
+    "stat_peak_time": "250731105530"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "fc_mb",
+    "stat_current": "55",
+    "stat_peak": "215",
+    "stat_peak_time": "250731105805"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "fc_io",
+    "stat_current": "4995",
+    "stat_peak": "7710",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "sas_mb",
+    "stat_current": "114",
+    "stat_peak": "860",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "sas_io",
+    "stat_current": "457",
+    "stat_peak": "14646",
+    "stat_peak_time": "250731105520"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iscsi_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iscsi_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "write_cache_pc",
+    "stat_current": "24",
+    "stat_peak": "34",
+    "stat_peak_time": "250731105525"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "total_cache_pc",
+    "stat_current": "79",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105525"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_mb",
+    "stat_current": "32",
+    "stat_peak": "210",
+    "stat_peak_time": "250731105805"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_io",
+    "stat_current": "576",
+    "stat_peak": "1296",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_ms",
+    "stat_current": "1.473",
+    "stat_peak": "2.913",
+    "stat_peak_time": "250731105810"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_mb",
+    "stat_current": "15",
+    "stat_peak": "91",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_io",
+    "stat_current": "314",
+    "stat_peak": "1366",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_ms",
+    "stat_current": "0.316",
+    "stat_peak": "1.234",
+    "stat_peak_time": "250731105640"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_mb",
+    "stat_current": "193",
+    "stat_peak": "906",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_io",
+    "stat_current": "1767",
+    "stat_peak": "6722",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_ms",
+    "stat_current": "2.191",
+    "stat_peak": "6.556",
+    "stat_peak_time": "250731105615"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "205",
+    "stat_peak_time": "250731105805"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_r_io",
+    "stat_current": "1",
+    "stat_peak": "186",
+    "stat_peak_time": "250731105655"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_r_ms",
+    "stat_current": "0.237",
+    "stat_peak": "19.912",
+    "stat_peak_time": "250731105810"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_w_mb",
+    "stat_current": "32",
+    "stat_peak": "44",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_w_io",
+    "stat_current": "575",
+    "stat_peak": "1150",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "vdisk_w_ms",
+    "stat_current": "1.476",
+    "stat_peak": "1.955",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "61",
+    "stat_peak_time": "250731105655"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_r_io",
+    "stat_current": "1",
+    "stat_peak": "417",
+    "stat_peak_time": "250731105655"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_r_ms",
+    "stat_current": "0.140",
+    "stat_peak": "0.840",
+    "stat_peak_time": "250731105805"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_w_mb",
+    "stat_current": "15",
+    "stat_peak": "51",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_w_io",
+    "stat_current": "311",
+    "stat_peak": "1109",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "mdisk_w_ms",
+    "stat_current": "0.316",
+    "stat_peak": "4.888",
+    "stat_peak_time": "250731105640"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_r_mb",
+    "stat_current": "151",
+    "stat_peak": "875",
+    "stat_peak_time": "250731105455"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_r_io",
+    "stat_current": "814",
+    "stat_peak": "3470",
+    "stat_peak_time": "250731105455"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_r_ms",
+    "stat_current": "4.648",
+    "stat_peak": "6.556",
+    "stat_peak_time": "250731105615"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_w_mb",
+    "stat_current": "42",
+    "stat_peak": "151",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_w_io",
+    "stat_current": "954",
+    "stat_peak": "3345",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "drive_w_ms",
+    "stat_current": "0.094",
+    "stat_peak": "0.893",
+    "stat_peak_time": "250731105815"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iplink_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iplink_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iplink_comp_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "cloud_up_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "cloud_up_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "cloud_down_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "cloud_down_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iser_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "2",
+    "node_name": "node2",
+    "stat_name": "iser_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "compression_cpu_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "cpu_pc",
+    "stat_current": "3",
+    "stat_peak": "3",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "fc_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "fc_io",
+    "stat_current": "2615",
+    "stat_peak": "2790",
+    "stat_peak_time": "250731105523"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "sas_mb",
+    "stat_current": "478",
+    "stat_peak": "495",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "sas_io",
+    "stat_current": "1900",
+    "stat_peak": "1964",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iscsi_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iscsi_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "write_cache_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "total_cache_pc",
+    "stat_current": "79",
+    "stat_peak": "79",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_mb",
+    "stat_current": "478",
+    "stat_peak": "494",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_io",
+    "stat_current": "1900",
+    "stat_peak": "1966",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_ms",
+    "stat_current": "14.279",
+    "stat_peak": "14.279",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_r_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_r_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_w_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "vdisk_w_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_r_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_r_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_w_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "mdisk_w_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_r_mb",
+    "stat_current": "478",
+    "stat_peak": "494",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_r_io",
+    "stat_current": "1900",
+    "stat_peak": "1966",
+    "stat_peak_time": "250731105818"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_r_ms",
+    "stat_current": "14.285",
+    "stat_peak": "14.285",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_w_io",
+    "stat_current": "0",
+    "stat_peak": "1",
+    "stat_peak_time": "250731105528"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "drive_w_ms",
+    "stat_current": "1.398",
+    "stat_peak": "1.467",
+    "stat_peak_time": "250731105648"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iplink_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iplink_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iplink_comp_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "cloud_up_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "cloud_up_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "cloud_down_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "cloud_down_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iser_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "4",
+    "node_name": "node4",
+    "stat_name": "iser_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105848"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "compression_cpu_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "cpu_pc",
+    "stat_current": "4",
+    "stat_peak": "4",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "fc_mb",
+    "stat_current": "0",
+    "stat_peak": "2",
+    "stat_peak_time": "250731105724"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "fc_io",
+    "stat_current": "2685",
+    "stat_peak": "2837",
+    "stat_peak_time": "250731105529"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "sas_mb",
+    "stat_current": "740",
+    "stat_peak": "875",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "sas_io",
+    "stat_current": "2929",
+    "stat_peak": "3479",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iscsi_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iscsi_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "write_cache_pc",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "total_cache_pc",
+    "stat_current": "79",
+    "stat_peak": "79",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_mb",
+    "stat_current": "736",
+    "stat_peak": "875",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_io",
+    "stat_current": "2941",
+    "stat_peak": "3479",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_ms",
+    "stat_current": "15.903",
+    "stat_peak": "16.060",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_r_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_r_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_w_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "vdisk_w_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_r_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_r_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_r_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_w_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "mdisk_w_ms",
+    "stat_current": "0.000",
+    "stat_peak": "0.000",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_r_mb",
+    "stat_current": "736",
+    "stat_peak": "875",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_r_io",
+    "stat_current": "2941",
+    "stat_peak": "3477",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_r_ms",
+    "stat_current": "15.907",
+    "stat_peak": "16.062",
+    "stat_peak_time": "250731105739"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_w_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_w_io",
+    "stat_current": "0",
+    "stat_peak": "1",
+    "stat_peak_time": "250731105529"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "drive_w_ms",
+    "stat_current": "0.262",
+    "stat_peak": "0.377",
+    "stat_peak_time": "250731105529"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iplink_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iplink_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iplink_comp_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "cloud_up_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "cloud_up_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "cloud_down_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "cloud_down_ms",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iser_mb",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  },
+  {
+    "node_id": "3",
+    "node_name": "node3",
+    "stat_name": "iser_io",
+    "stat_current": "0",
+    "stat_peak": "0",
+    "stat_peak_time": "250731105844"
+  }
+]

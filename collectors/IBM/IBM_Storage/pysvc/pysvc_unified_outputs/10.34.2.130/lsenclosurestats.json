@@ -1,0 +1,212 @@
+[
+  {
+    "enclosure_id": "1",
+    "stat_name": "power_w",
+    "stat_current": "687",
+    "stat_peak": "690",
+    "stat_peak_time": "250731105820"
+  },
+  {
+    "enclosure_id": "1",
+    "stat_name": "temp_c",
+    "stat_current": "25",
+    "stat_peak": "25",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "1",
+    "stat_name": "temp_f",
+    "stat_current": "77",
+    "stat_peak": "77",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "7",
+    "stat_name": "power_w",
+    "stat_current": "159",
+    "stat_peak": "165",
+    "stat_peak_time": "250731105720"
+  },
+  {
+    "enclosure_id": "7",
+    "stat_name": "temp_c",
+    "stat_current": "27",
+    "stat_peak": "27",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "7",
+    "stat_name": "temp_f",
+    "stat_current": "80",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "10",
+    "stat_name": "power_w",
+    "stat_current": "188",
+    "stat_peak": "220",
+    "stat_peak_time": "250731105545"
+  },
+  {
+    "enclosure_id": "10",
+    "stat_name": "temp_c",
+    "stat_current": "28",
+    "stat_peak": "28",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "10",
+    "stat_name": "temp_f",
+    "stat_current": "82",
+    "stat_peak": "82",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "2",
+    "stat_name": "power_w",
+    "stat_current": "197",
+    "stat_peak": "203",
+    "stat_peak_time": "250731105750"
+  },
+  {
+    "enclosure_id": "2",
+    "stat_name": "temp_c",
+    "stat_current": "28",
+    "stat_peak": "28",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "2",
+    "stat_name": "temp_f",
+    "stat_current": "82",
+    "stat_peak": "82",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "9",
+    "stat_name": "power_w",
+    "stat_current": "172",
+    "stat_peak": "173",
+    "stat_peak_time": "250731105720"
+  },
+  {
+    "enclosure_id": "9",
+    "stat_name": "temp_c",
+    "stat_current": "27",
+    "stat_peak": "27",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "9",
+    "stat_name": "temp_f",
+    "stat_current": "80",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "11",
+    "stat_name": "power_w",
+    "stat_current": "163",
+    "stat_peak": "168",
+    "stat_peak_time": "250731105820"
+  },
+  {
+    "enclosure_id": "11",
+    "stat_name": "temp_c",
+    "stat_current": "27",
+    "stat_peak": "27",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "11",
+    "stat_name": "temp_f",
+    "stat_current": "80",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "3",
+    "stat_name": "power_w",
+    "stat_current": "202",
+    "stat_peak": "207",
+    "stat_peak_time": "250731105725"
+  },
+  {
+    "enclosure_id": "3",
+    "stat_name": "temp_c",
+    "stat_current": "28",
+    "stat_peak": "28",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "3",
+    "stat_name": "temp_f",
+    "stat_current": "82",
+    "stat_peak": "82",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "8",
+    "stat_name": "power_w",
+    "stat_current": "135",
+    "stat_peak": "136",
+    "stat_peak_time": "250731105605"
+  },
+  {
+    "enclosure_id": "8",
+    "stat_name": "temp_c",
+    "stat_current": "27",
+    "stat_peak": "27",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "8",
+    "stat_name": "temp_f",
+    "stat_current": "80",
+    "stat_peak": "80",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "4",
+    "stat_name": "power_w",
+    "stat_current": "604",
+    "stat_peak": "604",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "4",
+    "stat_name": "temp_c",
+    "stat_current": "32",
+    "stat_peak": "32",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "4",
+    "stat_name": "temp_f",
+    "stat_current": "89",
+    "stat_peak": "89",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "12",
+    "stat_name": "power_w",
+    "stat_current": "764",
+    "stat_peak": "764",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "12",
+    "stat_name": "temp_c",
+    "stat_current": "25",
+    "stat_peak": "25",
+    "stat_peak_time": "250731105845"
+  },
+  {
+    "enclosure_id": "12",
+    "stat_name": "temp_f",
+    "stat_current": "77",
+    "stat_peak": "77",
+    "stat_peak_time": "250731105845"
+  }
+]

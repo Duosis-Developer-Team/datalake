@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<diskStatsColl
+xmlns="http://ibm.com/storage/management/performance/api/2010/03/driveStats"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://ibm.com/storage/management/performance/api/2010/03/driveStats schema/SVCPerfStatsD.xsd" scope="node" id="node3" cluster="dc13storage1" node_id="0x0000000000000003" cluster_id="0x0000020420404b0a" sizeUnits="512B" timeUnits="msec" contains="driveStats" timestamp="2025-07-31 10:25:39" timezone="GMT+3:00">
+<mdsk idx="0" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="1" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="2" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="3" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="4" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="5" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="6" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="7" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="8" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="9" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="10" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="11" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="12" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="13" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="14" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="15" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="16" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="17" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="18" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="19" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="20" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="21" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="22" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="23" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="24" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="26" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="27" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="28" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="29" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="30" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="31" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="32" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="33" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="34" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="35" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="36" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="37" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="38" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="39" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="40" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="41" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="42" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="43" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="44" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="45" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="46" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="47" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="48" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="49" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="50" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="51" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="52" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="53" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="54" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="55" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="56" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="57" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="58" id="" ro="2005636681" wo="1572716109" rb="552004205264" wb="326425914791" re="2860009234" we="664426564" rq="2931737223" wq="696230689"
+ ure="2860518736959" uwe="664544930541" urq="2932259504181" uwq="696354720832"
+ pre="8971" pwe="0" pro="9058" pwo="0" />
+<mdsk idx="59" id="" ro="2000437899" wo="1575876778" rb="552236761696" wb="326218203308" re="2884224556" we="668823631" rq="2957673904" wq="701811176"
+ ure="2884738373145" uwe="668942780728" urq="2958200805825" uwq="701936202215"
+ pre="8693" pwe="0" pro="8965" pwo="0" />
+<mdsk idx="60" id="" ro="1993787674" wo="1556398756" rb="551628834072" wb="325487634110" re="2851880080" we="624096990" rq="2919219328" wq="653319447"
+ ure="2852388135017" uwe="624208171853" urq="2919739379816" uwq="653435834913"
+ pre="9621" pwe="0" pro="9779" pwo="0" />
+<mdsk idx="61" id="" ro="1994878852" wo="1554209344" rb="551643849848" wb="324710753764" re="2877073973" we="634612663" rq="2945748863" wq="664811946"
+ ure="2877586515895" uwe="634725717889" urq="2946273640635" uwq="664930380933"
+ pre="9281" pwe="0" pro="9478" pwo="0" />
+<mdsk idx="62" id="" ro="1998324166" wo="1567286216" rb="551674731400" wb="327303196079" re="2831559782" we="650564713" rq="2843401120" wq="660010812"
+ ure="2832064216736" uwe="650680609576" urq="2843907664647" uwq="660128391226"
+ pre="9499" pwe="0" pro="9500" pwo="0" />
+<mdsk idx="63" id="" ro="2003840158" wo="1569467647" rb="551790624024" wb="327821539596" re="2927370945" we="702902168" rq="3003398735" wq="739684687"
+ ure="2927892448240" uwe="703027388761" urq="3003933782812" uwq="739816460784"
+ pre="8084" pwe="0" pro="8285" pwo="0" />
+<mdsk idx="64" id="" ro="1997972930" wo="1585506385" rb="551032936312" wb="326763599683" re="2931273781" we="709384513" rq="3008868271" wq="747052059"
+ ure="2931795979498" uwe="709510888338" urq="3009404293592" uwq="747185145129"
+ pre="10120" pwe="0" pro="10219" pwo="0" />
+<mdsk idx="65" id="" ro="1999416898" wo="1580951510" rb="551088521592" wb="326423404721" re="2855341222" we="687221399" rq="2929309068" wq="722205054"
+ ure="2855849893964" uwe="687343826376" urq="2929830917277" uwq="722333712970"
+ pre="10048" pwe="0" pro="10066" pwo="0" />
+<mdsk idx="66" id="" ro="1790549994" wo="1517892236" rb="444863122976" wb="327248762896" re="1638423776" we="655600403" rq="1681910780" wq="687617639"
+ ure="1638715657458" uwe="655717196510" urq="1682210408587" uwq="687740136915"
+ pre="9666" pwe="0" pro="9893" pwo="0" />
+<mdsk idx="67" id="" ro="1801868833" wo="1528217687" rb="445636548992" wb="327714675978" re="1661017571" we="652084055" rq="1706025334" wq="684308212"
+ ure="1661313477042" uwe="652200222662" urq="1706329258403" uwq="684430120589"
+ pre="8916" pwe="0" pro="9005" pwo="0" />
+<mdsk idx="68" id="" ro="1800765529" wo="1526574013" rb="446046504248" wb="327479327950" re="1656455270" we="593129633" rq="1695466595" wq="620818725"
+ ure="1656750363325" uwe="593235298247" urq="1695768637824" uwq="620929323003"
+ pre="7451" pwe="0" pro="7545" pwo="0" />
+<mdsk idx="69" id="" ro="1792189260" wo="1512578342" rb="443736534336" wb="326712880906" re="1643965016" we="664831864" rq="1659400746" wq="679273458"
+ ure="1644257884158" uwe="664950302249" urq="1659696364126" uwq="679394469681"
+ pre="8612" pwe="0" pro="8614" pwo="0" />
+<mdsk idx="70" id="" ro="1789676958" wo="1519060858" rb="444416541232" wb="327907326548" re="1636432948" we="604829831" rq="1675072633" wq="631938215"
+ ure="1636724474515" uwe="604937580037" urq="1675371042805" uwq="632050793986"
+ pre="7710" pwe="0" pro="7937" pwo="0" />
+<mdsk idx="71" id="" ro="1794862723" wo="1516867184" rb="445073770416" wb="327996667457" re="1672618635" we="668205938" rq="1717982049" wq="701771899"
+ ure="1672916607810" uwe="668324977257" urq="1718288103541" uwq="701896918065"
+ pre="8476" pwe="0" pro="8657" pwo="0" />
+<mdsk idx="72" id="" ro="1792075691" wo="1517306717" rb="445459084384" wb="328190125722" re="1666327304" we="645081514" rq="1707476102" wq="675375180"
+ ure="1666624156519" uwe="645196434320" urq="1707780284866" uwq="675495496492"
+ pre="11166" pwe="0" pro="11233" pwo="0" />
+<mdsk idx="73" id="" ro="1805807520" wo="1527208218" rb="445819938504" wb="328718304820" re="1656951161" we="658595316" rq="1701056498" wq="690677634"
+ ure="1657246342507" uwe="658712643855" urq="1701359536787" uwq="690800676655"
+ pre="9365" pwe="0" pro="9625" pwo="0" />
+<mdsk idx="74" id="" ro="2013917264" wo="1274310521" rb="303877711000" wb="181468420199" re="1650665039" we="731365072" rq="1698463434" wq="762200965"
+ ure="1650959101162" uwe="731495362821" urq="1698766010840" uwq="762336749132"
+ pre="11088" pwe="0" pro="11229" pwo="0" />
+<mdsk idx="75" id="" ro="1996675287" wo="1270694844" rb="303667692584" wb="182833157701" re="1645078678" we="848399330" rq="1702474191" wq="891378391"
+ ure="1645371744332" uwe="848550470387" urq="1702777482622" uwq="891537187649"
+ pre="12715" pwe="0" pro="12815" pwo="0" />
+<mdsk idx="76" id="" ro="2012572638" wo="1250685868" rb="304063267136" wb="182481757282" re="1672221317" we="796806372" rq="1694970100" wq="817107937"
+ ure="1672519218813" uwe="796948321687" urq="1695272054798" uwq="817253503262"
+ pre="7822" pwe="0" pro="7823" pwo="0" />
+<mdsk idx="77" id="" ro="2021541722" wo="1267810423" rb="304322077192" wb="183395703808" re="1687715456" we="924256229" rq="1755087038" wq="978848263"
+ ure="1688016118203" uwe="924420883580" urq="1755399702536" uwq="979022642370"
+ pre="10053" pwe="0" pro="10320" pwo="0" />
+<mdsk idx="78" id="" ro="2025192280" wo="1267430734" rb="304873074944" wb="182851293564" re="1663217133" we="582218885" rq="1704303138" wq="605959000"
+ ure="1663513431535" uwe="582322606055" urq="1704606754982" uwq="606066950788"
+ pre="8272" pwe="0" pro="8494" pwo="0" />
+<mdsk idx="79" id="" ro="2011186479" wo="1232428585" rb="304321462248" wb="181605742114" re="1647669374" we="869842113" rq="1707513271" wq="915783807"
+ ure="1647962902164" uwe="869997073939" urq="1707817460271" uwq="915946951858"
+ pre="9924" pwe="0" pro="10100" pwo="0" />
+<mdsk idx="80" id="" ro="2007396696" wo="1238792122" rb="303352181216" wb="181051174270" re="1659157236" we="879014905" rq="1720960334" wq="925710675"
+ ure="1659452811266" uwe="879171499794" urq="1721266918857" uwq="925875588595"
+ pre="10271" pwe="0" pro="10348" pwo="0" />
+<mdsk idx="81" id="" ro="2016742165" wo="1281480681" rb="303466799048" wb="181016606036" re="1693931979" we="966747938" rq="1768333101" wq="1028539373"
+ ure="1694233748901" uwe="966920162050" urq="1768648124848" uwq="1028722605279"
+ pre="9179" pwe="0" pro="9322" pwo="0" />
+<mdsk idx="82" id="" ro="396122943" wo="54578678" rb="187924305200" wb="11640301032" re="3234753509" we="88386579" rq="3596375033" wq="93243561"
+ ure="3235329771598" uwe="88402325508" urq="3597015717628" uwq="93260172142"
+ pre="290591" pwe="463" pro="290598" pwo="471" />
+<mdsk idx="83" id="" ro="385573223" wo="33388956" rb="186699650664" wb="11407118464" re="2884706141" we="70642562" rq="3099328369" wq="73624274"
+ ure="2885220043744" uwe="70655147311" urq="3099880506323" uwq="73637390160"
+ pre="43123" pwe="0" pro="51336" pwo="0" />
+<mdsk idx="84" id="" ro="385205912" wo="32994676" rb="186709997192" wb="11395796112" re="3024045176" we="68868458" rq="3330214464" wq="72365285"
+ ure="3024583902188" uwe="68880726775" urq="3330807732782" uwq="72378176868"
+ pre="32872" pwe="0" pro="38426" pwo="0" />
+<mdsk idx="85" id="" ro="385701035" wo="33105324" rb="186729028520" wb="11454975472" re="2853905243" we="69724905" rq="3070235884" wq="72932819"
+ ure="2854413658934" uwe="69737326369" urq="3070782838143" uwq="72945811908"
+ pre="44847" pwe="0" pro="44937" pwo="0" />
+<mdsk idx="86" id="" ro="386220016" wo="33642446" rb="186735379544" wb="11427444064" re="3059648586" we="70073944" rq="3371269679" wq="73278569"
+ ure="3060193654617" uwe="70086428068" urq="3371870262467" uwq="73291624267"
+ pre="50600" pwe="0" pro="50613" pwo="0" />
+<mdsk idx="87" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="88" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="89" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="90" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="91" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="92" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="93" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="94" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="95" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="96" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="97" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="98" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="99" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="100" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="101" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="102" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="103" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="104" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="105" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="106" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="107" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="108" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="109" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="110" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="111" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="112" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="113" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="114" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="115" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="116" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="117" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="118" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="119" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="120" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="121" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="122" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="123" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="124" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="125" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="126" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="127" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="128" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="129" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="130" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="131" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="132" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="133" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="134" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="135" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="136" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="137" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="138" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="139" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="140" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="141" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="142" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="143" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="144" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="145" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="146" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="147" id="" ro="136762627" wo="94692854" rb="43266954552" wb="29737341352" re="1518195812" we="422873118" rq="1942601424" wq="665369456"
+ ure="1518466274437" uwe="422948451743" urq="1942947494032" uwq="665487990694"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="148" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="149" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="150" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="151" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="152" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="153" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="154" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="155" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="156" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="157" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="158" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="159" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="160" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="161" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="162" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="163" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="164" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="165" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="166" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="167" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="168" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="169" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="170" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="171" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="172" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="173" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="174" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="175" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="176" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="177" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="178" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="179" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="180" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="181" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="182" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="183" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="184" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="185" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="186" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="187" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="188" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="189" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="190" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="191" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="192" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="193" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="194" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="195" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="196" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="197" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="198" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="199" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="200" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="201" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="202" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="203" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="204" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="205" id="" ro="386102877" wo="33498558" rb="186704703056" wb="11399815992" re="3119573667" we="71560145" rq="3470090657" wq="75105647"
+ ure="3120129410815" uwe="71572893322" urq="3470708844891" uwq="75119026877"
+ pre="66541" pwe="0" pro="66615" pwo="0" />
+<mdsk idx="206" id="" ro="385801035" wo="33671263" rb="186706620536" wb="11438098536" re="3061581441" we="71583116" rq="3365890514" wq="74943767"
+ ure="3062126854102" uwe="71595868722" urq="3366490138524" uwq="74957118796"
+ pre="53586" pwe="0" pro="55170" pwo="0" />
+<mdsk idx="207" id="" ro="385806664" wo="33301007" rb="186737722832" wb="11451125896" re="3078984158" we="68562526" rq="3407845409" wq="71813684"
+ ure="3079532670961" uwe="68574741053" urq="3408452507927" uwq="71826477672"
+ pre="38444" pwe="0" pro="42362" pwo="0" />
+<mdsk idx="208" id="" ro="386281857" wo="34006264" rb="186737756448" wb="11450710064" re="2821251778" we="71060200" rq="3010011962" wq="74060479"
+ ure="2821754376814" uwe="71072859533" urq="3010548187721" uwq="74073673054"
+ pre="38228" pwe="0" pro="38256" pwo="0" />
+<mdsk idx="209" id="" ro="7597845363" wo="1159389852" rb="777669560344" wb="167323673177" re="5194747644" we="657923110" rq="5226044694" wq="671222406"
+ ure="5195673074740" uwe="658040318033" urq="5226975699878" uwq="671341983147"
+ pre="9011" pwe="0" pro="9012" pwo="0" />
+<mdsk idx="210" id="" ro="7606913343" wo="1187809529" rb="778833824904" wb="168261502925" re="5174255618" we="765147809" rq="5347649623" wq="807371358"
+ ure="5175177397752" uwe="765284117997" urq="5348602292741" uwq="807515189005"
+ pre="8483" pwe="0" pro="8588" pwo="0" />
+<mdsk idx="211" id="" ro="7607684935" wo="1169436162" rb="779237175120" wb="168830500200" re="5203451422" we="619990952" rq="5364005686" wq="646245265"
+ ure="5204378403100" uwe="620101402054" urq="5364961268964" uwq="646360392675"
+ pre="10732" pwe="0" pro="10807" pwo="0" />
+<mdsk idx="212" id="" ro="7604358384" wo="1149339748" rb="778446217504" wb="167104067270" re="5226567941" we="742224025" rq="5396350603" wq="780898910"
+ ure="5227499040245" uwe="742356250633" urq="5397311948708" uwq="781038025663"
+ pre="8991" pwe="0" pro="9336" pwo="0" />
+<mdsk idx="213" id="" ro="7587970369" wo="1137449061" rb="778824473232" wb="168353937730" re="5211126443" we="549247032" rq="5363806364" wq="572204403"
+ ure="5212054791245" uwe="549344878935" urq="5364761911703" uwq="572306340222"
+ pre="9543" pwe="0" pro="9917" pwo="0" />
+<mdsk idx="214" id="" ro="7577088151" wo="1151959912" rb="779978135456" wb="170314323811" re="5230498255" we="676283776" rq="5393899025" wq="707223065"
+ ure="5231430053995" uwe="676404254965" urq="5394859933974" uwq="707349055496"
+ pre="10273" pwe="0" pro="10332" pwo="0" />
+<mdsk idx="215" id="" ro="7597783744" wo="1170703355" rb="778839008336" wb="169254983917" re="5214111071" we="755863540" rq="5390538390" wq="798310626"
+ ure="5215039951223" uwe="755998195142" urq="5391498700243" uwq="798452843027"
+ pre="10061" pwe="0" pro="10271" pwo="0" />
+<mdsk idx="216" id="" ro="7572445857" wo="1151462472" rb="776571434768" wb="168106451555" re="5148251771" we="720807170" rq="5185588982" wq="740747935"
+ ure="5149168918438" uwe="720935579946" urq="5186512780790" uwq="740879898158"
+ pre="9918" pwe="0" pro="9921" pwo="0" />
+<mdsk idx="217" id="" ro="386088824" wo="33509068" rb="186731387272" wb="11414804896" re="3045678570" we="70582736" rq="3351828473" wq="74253718"
+ ure="3046221149662" uwe="70595310438" urq="3352425592413" uwq="74266946753"
+ pre="39022" pwe="0" pro="45108" pwo="0" />
+<mdsk idx="218" id="" ro="61741794" wo="35267630" rb="19114490112" wb="11923320864" re="408803160" we="79262280" rq="437230986" wq="84550882"
+ ure="408875987886" uwe="79276400429" urq="437308877543" uwq="84565945049"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="219" id="" ro="61773921" wo="35124636" rb="19080239944" wb="11885161608" re="403547134" we="79178504" rq="429764371" wq="84309436"
+ ure="403619025367" uwe="79192609847" urq="429840932928" uwq="84324455700"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="220" id="" ro="61471907" wo="35019277" rb="19038130976" wb="11889149720" re="413238179" we="78473472" rq="445362315" wq="84255480"
+ ure="413311796853" uwe="78487452151" urq="445441655873" uwq="84270490266"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="221" id="" ro="61807303" wo="35498497" rb="19081300328" wb="11897165152" re="423818704" we="81536328" rq="465362444" wq="87970562"
+ ure="423894206417" uwe="81550854273" urq="465445347753" uwq="87986234612"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="222" id="" ro="61481593" wo="35181729" rb="19038738592" wb="11869242576" re="401712086" we="76980680" rq="426382376" wq="81544857"
+ ure="401783650165" uwe="76994394229" urq="426458335019" uwq="81559384670"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="223" id="" ro="61891865" wo="35748684" rb="19104969448" wb="11949930080" re="406901716" we="80240200" rq="435210364" wq="84753763"
+ ure="406974204539" uwe="80254494623" urq="435287895760" uwq="84768861968"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="224" id="" ro="61940407" wo="35682790" rb="19086519624" wb="11967811616" re="408670981" we="81552643" rq="439855976" wq="87667713"
+ ure="408743785300" uwe="81567172357" urq="439934335987" uwq="87683331122"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="225" id="" ro="61892893" wo="35361238" rb="19077155504" wb="11911054888" re="403660377" we="79185799" rq="432174937" wq="84334442"
+ ure="403732288920" uwe="79199905977" urq="432251928557" uwq="84349466390"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="226" id="" ro="62600641" wo="36117168" rb="19107479904" wb="11899858600" re="407869432" we="79045665" rq="438174613" wq="84220635"
+ ure="407942093533" uwe="79059747353" urq="438252672974" uwq="84235638774"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="227" id="" ro="62063472" wo="35722834" rb="19147200296" wb="11967739096" re="419118793" we="81340389" rq="453641662" wq="86804028"
+ ure="419193457985" uwe="81354880077" urq="453722477055" uwq="86819492893"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="228" id="" ro="386573169" wo="33287368" rb="187099774904" wb="11434894360" re="2995601792" we="67479238" rq="3293478990" wq="70619341"
+ ure="2996135450296" uwe="67491259509" urq="3294065714492" uwq="70631922208"
+ pre="61726" pwe="0" pro="61862" pwo="0" />
+<mdsk idx="229" id="" ro="387277672" wo="33857845" rb="187119629648" wb="11425321632" re="2892646931" we="70048224" rq="3137324375" wq="73619772"
+ ure="2893162249009" uwe="70060703223" urq="3137883281082" uwq="73632887532"
+ pre="59546" pwe="0" pro="61123" pwo="0" />
+<mdsk idx="230" id="" ro="387459570" wo="33831676" rb="187118459528" wb="11380127464" re="3079396150" we="70171361" rq="3413762561" wq="72955194"
+ ure="3079944736370" uwe="70183862531" urq="3414370714352" uwq="72968191561"
+ pre="61474" pwe="0" pro="61476" pwo="0" />
+<mdsk idx="231" id="" ro="386853119" wo="33422862" rb="187090433560" wb="11378955016" re="3080743845" we="70687179" rq="3424086719" wq="74345435"
+ ure="3081292671191" uwe="70699772447" urq="3424696711577" uwq="74358680172"
+ pre="58265" pwe="0" pro="58312" pwo="0" />
+<mdsk idx="232" id="" ro="386910351" wo="33459725" rb="187099449472" wb="11421017464" re="3037548356" we="70463723" rq="3344369804" wq="73898996"
+ ure="3038089487680" uwe="70476276126" urq="3344965594976" uwq="73912160953"
+ pre="41509" pwe="0" pro="47218" pwo="0" />
+<mdsk idx="233" id="" ro="386626463" wo="33631386" rb="187113268776" wb="11478844448" re="3087955790" we="70107469" rq="3431115481" wq="73557651"
+ ure="3088505901137" uwe="70119958912" urq="3431726725562" uwq="73570755817"
+ pre="78556" pwe="0" pro="80704" pwo="0" />
+<mdsk idx="234" id="" ro="387369397" wo="33609750" rb="187091039016" wb="11423940456" re="3030186207" we="68642613" rq="3330845010" wq="71960796"
+ ure="3030726027005" uwe="68654841543" urq="3331438391798" uwq="71973616334"
+ pre="52236" pwe="0" pro="52363" pwo="0" />
+<mdsk idx="235" id="" ro="387830206" wo="33863386" rb="187095484280" wb="11367285296" re="3030421693" we="70705409" rq="3337914294" wq="73944008"
+ ure="3030961554994" uwe="70718005476" urq="3338508935194" uwq="73957181125"
+ pre="51489" pwe="0" pro="51518" pwo="0" />
+<mdsk idx="236" id="" ro="387755903" wo="33209350" rb="187121041008" wb="11399870352" re="2981109650" we="67839663" rq="3260669688" wq="70621815"
+ ure="2981640726976" uwe="67851749159" urq="3261250567523" uwq="70634396887"
+ pre="41914" pwe="0" pro="42675" pwo="0" />
+<mdsk idx="237" id="" ro="386619745" wo="32754911" rb="187097565232" wb="11392906296" re="2833594524" we="65900838" rq="3039422048" wq="67950343"
+ ure="2834099321548" uwe="65912578489" urq="3039963513666" uwq="67962448829"
+ pre="42647" pwe="0" pro="44130" pwo="0" />
+<mdsk idx="238" id="" ro="136682400" wo="95141770" rb="43248038248" wb="29735765912" re="1094609677" we="229577472" rq="1189670455" wq="280645445"
+ ure="1094804679215" uwe="229618371190" urq="1189882392442" uwq="280695441472"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="239" id="" ro="137884500" wo="95902407" rb="43309927472" wb="29790290544" re="1085121432" we="229036761" rq="1157012420" wq="262931884"
+ ure="1085314743659" uwe="229077564044" urq="1157218538622" uwq="262978725280"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="240" id="" ro="138191853" wo="95997647" rb="43350279928" wb="29812680560" re="1073345131" we="226039169" rq="1149728974" wq="268541790"
+ ure="1073536344832" uwe="226079437478" urq="1149933795133" uwq="268589630625"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="241" id="" ro="137566810" wo="95522244" rb="43280811472" wb="29792721384" re="1087007225" we="226392283" rq="1168484639" wq="265909202"
+ ure="1087200872694" uwe="226432615007" urq="1168692801646" uwq="265956573052"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="242" id="" ro="137064182" wo="95629238" rb="43305179592" wb="29856797192" re="1075430579" we="221897947" rq="1150068103" wq="256388893"
+ ure="1075622164851" uwe="221937478029" urq="1150272984845" uwq="256434568330"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="243" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="244" id="" ro="136502606" wo="95297035" rb="43266656944" wb="29836941856" re="1088690192" we="224440301" rq="1177845777" wq="273272488"
+ ure="1088884139419" uwe="224480284730" urq="1178055607320" uwq="273321171721"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="245" id="" ro="136940488" wo="95460600" rb="43283358832" wb="29804167568" re="1081930781" we="225632768" rq="1170714875" wq="274319704"
+ ure="1082123524396" uwe="225672964708" urq="1170923434767" uwq="274368573514"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="246" id="" ro="137377387" wo="95509175" rb="43325076328" wb="29813410712" re="1096527842" we="227477559" rq="1201825477" wq="290973364"
+ ure="1096723186267" uwe="227518084102" urq="1202039579863" uwq="291025200239"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="247" id="" ro="136860856" wo="95482880" rb="43288362528" wb="29761442960" re="1093594255" we="229863257" rq="1181516893" wq="276494377"
+ ure="1093789076223" uwe="229904206870" urq="1181727377494" uwq="276543634383"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="248" id="" ro="432675337" wo="71799446" rb="198832839928" wb="22140693696" re="3541693311" we="168509439" rq="3925157967" wq="193229451"
+ ure="3542324254830" uwe="168539458824" urq="3925857223185" uwq="193263874490"
+ pre="53353" pwe="0" pro="53370" pwo="0" />
+<mdsk idx="249" id="" ro="432369694" wo="71387438" rb="198744729552" wb="22017881136" re="3308958452" we="165746586" rq="3565685494" wq="186041057"
+ ure="3309547934046" uwe="165776114096" urq="3566320711157" uwq="186074199833"
+ pre="51808" pwe="0" pro="51930" pwo="0" />
+<mdsk idx="250" id="" ro="432945650" wo="71886836" rb="198843117760" wb="22214084136" re="3460957333" we="167126826" rq="3788795025" wq="185844342"
+ ure="3461573894061" uwe="167156599997" urq="3789469989336" uwq="185877450121"
+ pre="49789" pwe="0" pro="53111" pwo="0" />
+<mdsk idx="251" id="" ro="432263257" wo="71420094" rb="198753968872" wb="22084223272" re="3465487135" we="165055241" rq="3796441937" wq="181609637"
+ ure="3466104502321" uwe="165084645312" urq="3797118263568" uwq="181641991036"
+ pre="86901" pwe="0" pro="86903" pwo="0" />
+<mdsk idx="252" id="" ro="432617196" wo="71288399" rb="198752531144" wb="22039193832" re="3425634865" we="163861281" rq="3739472763" wq="180612764"
+ ure="3426245132658" uwe="163890473398" urq="3740138940093" uwq="180644939807"
+ pre="41782" pwe="0" pro="46872" pwo="0" />
+<mdsk idx="253" id="" ro="432908276" wo="71435627" rb="198767853680" wb="22052946560" re="3421981797" we="165247422" rq="3737482363" wq="183081673"
+ ure="3422591414658" uwe="165276861339" urq="3738148185773" uwq="183114288693"
+ pre="45879" pwe="0" pro="49285" pwo="0" />
+<mdsk idx="254" id="" ro="432603467" wo="71031000" rb="198732294184" wb="21971571952" re="3491342983" we="162895623" rq="3845166776" wq="183948149"
+ ure="3491964956257" uwe="162924643199" urq="3845851782541" uwq="183980919489"
+ pre="40376" pwe="0" pro="42318" pwo="0" />
+<mdsk idx="255" id="" ro="432174284" wo="71130214" rb="198711478432" wb="21937979496" re="3403246101" we="163691227" rq="3709380876" wq="180594177"
+ ure="3403852380812" uwe="163720388207" urq="3710041693002" uwq="180626349570"
+ pre="41041" pwe="0" pro="46757" pwo="0" />
+<mdsk idx="256" id="" ro="432381343" wo="71287316" rb="198784832072" wb="22063826136" re="3458853910" we="168949448" rq="3803482040" wq="195872767"
+ ure="3459470096177" uwe="168979546051" urq="3804159620758" uwq="195907662190"
+ pre="45978" pwe="0" pro="45990" pwo="0" />
+<mdsk idx="257" id="" ro="432606917" wo="71823820" rb="198801279504" wb="22102081312" re="3409360800" we="162612600" rq="3718637329" wq="180744270"
+ ure="3409968169313" uwe="162641569052" urq="3719299794259" uwq="180776469575"
+ pre="37173" pwe="0" pro="39623" pwo="0" />
+<mdsk idx="258" id="" ro="143614440" wo="98900596" rb="45911710432" wb="31117474344" re="1124358115" we="229470526" rq="1180123914" wq="247578267"
+ ure="1124558416607" uwe="229511405873" urq="1180334150155" uwq="247622372433"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="259" id="" ro="142545147" wo="98602942" rb="45828850944" wb="31048164896" re="1161703465" we="236769005" rq="1238206608" wq="264119724"
+ ure="1161910419913" uwe="236811184885" urq="1238427191352" uwq="264166777051"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="260" id="" ro="143205772" wo="99339534" rb="45879012624" wb="31093101656" re="1150442167" we="235518335" rq="1221905685" wq="263577976"
+ ure="1150647115620" uwe="235560292456" urq="1222123364540" uwq="263624931707"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="261" id="" ro="142293602" wo="97937193" rb="45747275312" wb="30901598200" re="1133862672" we="234472463" rq="1200492385" wq="257907454"
+ ure="1134064666548" uwe="234514234516" urq="1200706249474" uwq="257953400200"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="262" id="" ro="143211720" wo="98823016" rb="45898775224" wb="31146523184" re="1149241512" we="234639573" rq="1215455805" wq="255906445"
+ ure="1149446246900" uwe="234681374139" urq="1215672335924" uwq="255952034223"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="263" id="" ro="143152232" wo="98840719" rb="45987294288" wb="31282916344" re="1151259534" we="236874997" rq="1224815410" wq="260915735"
+ ure="1151464627964" uwe="236917195967" urq="1225033608218" uwq="260962216578"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="264" id="" ro="142290071" wo="97892533" rb="45937306880" wb="31133635688" re="1139773668" we="231545044" rq="1209310823" wq="254862166"
+ ure="1139976715606" uwe="231586293548" urq="1209526259097" uwq="254907569559"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="265" id="" ro="142617359" wo="97438100" rb="45917750520" wb="31040971056" re="1155155619" we="231889064" rq="1222995238" wq="253463798"
+ ure="1155361407132" uwe="231930375289" urq="1223213112243" uwq="253508951998"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="266" id="" ro="141727587" wo="97162683" rb="45857091488" wb="31012797440" re="1114241201" we="224875652" rq="1170881874" wq="241553105"
+ ure="1114439700619" uwe="224915713627" urq="1171090464185" uwq="241596137044"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="267" id="" ro="142017105" wo="97598703" rb="45875224520" wb="31035411256" re="1610630775" we="456621620" rq="2051707663" wq="663076698"
+ ure="1610917704587" uwe="456702966527" urq="2052073169551" uwq="663194823510"
+ pre="0" pwe="0" pro="0" pwo="0" />
+<mdsk idx="268" id="" ro="0" wo="0" rb="0" wb="0" re="0" we="0" rq="0" wq="0"
+ ure="0" uwe="0" urq="0" uwq="0"
+ pre="0" pwe="0" pro="0" pwo="0" />
+</diskStatsColl>
