@@ -1,0 +1,89 @@
+{
+    "Veeam": {
+      "user": "",
+      "password": "",
+      "ips": "",
+      "created_after": 1,
+      "lastrun_after": 1,
+      "limit": 10000
+    },
+    "VmWare": {
+        "VMwareIP": "",
+        "VMwarePort": "",
+        "VMware_userName": "",
+        "VMware_password": ""
+    },
+    "IBM-Virtualize": {
+        "link": "",
+        "name": "",
+        "password": "",
+        "host": "",
+        "port": ,
+        "username": "",
+        "remote_path": "/dumps/iostats/",
+        "local_path": "/Datalake_Project/IBM/IBM_Storage/SSH/iostats/"
+    },
+    "IBM-HMC": {
+        "hmc_hostname": "",
+        "hmc_user": "",
+        "hmc_password": "",
+        "output_nchart": 0,
+        "output_json": 1,
+        "output_csv": 0,
+        "output_influx": 0,
+        "ihost": "myinflux",
+        "iport": "8086",
+        "idbname": "nextractplus",
+        "iuser": "fred",
+        "ipassword": "blogs",
+        "debug": 1
+    },
+    "Loki": {
+        "ip": "api/dcim/",
+        "api_token": "",
+        "location_table_name": "loki_locations",
+        "location_endpoint": "locations/",
+        "rack_table_name": "loki_racks",
+        "rack_endpoint": "racks/",
+        "device_table_name": "loki_devices",
+        "device_endpoint": "devices/",
+		"device-type_endpoint":"device-types/",
+		"device-type_table_name":"loki_device_types",
+        "ip2": "api/virtualization",
+        "virtualization_table_name": "loki_virtual_machines",
+        "virtualization_endpoint": "virtual-machines/"
+    },
+    "Nutanix": {
+        "PRISM_IP": "",
+        "USERNAME": "",
+        "PASSWORD": ""
+    },
+    "Zabbix": {
+        "zabbixHostName": "",
+        "zabUrl": "zabbix/api_jsonrpc.php",
+        "zabUser": "",
+        "zabPassword": "",
+		"pdu_group_id": "",
+		"zabbix_IP": ""
+    },
+    "Netbackup": {
+        "api_url": "netbackup/admin/jobs",
+        "api_url_diskpool": "netbackup/storage/disk-pools",
+        "bearer_token": ""
+    },
+    "ILO-Redfish": {
+        "IpAddress": "",
+        "Username": "",
+        "Password": ""
+    },
+    "s3icos": {
+        "IpAddress": "",
+        "Username": "",
+        "Password": ""
+    },
+    "IBM-SAN": {
+        "IpAddress": "",
+        "Username": "",
+        "Password": ""
+    }
+}
