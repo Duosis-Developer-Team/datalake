@@ -10,14 +10,14 @@
       copy:
         src: ../files/dc11/
         dest: /opt/nifi/conf/
-        owner: root  # <-- DÜZELTİLDİ (Eskisi: nifi)
-        group: root  # <-- DÜZELTİLDİ (Eskisi: nifi)
+        owner: root
+        group: root
         mode: '0640'
-      notify: Restart NiFi
+      # notify: Restart NiFi  <-- BU SATIRI SİLDİK/KAPATTIK
 
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
+  # handlers:                 <-- BU BLOĞU TAMAMEN SİLDİK
+  #   - name: Restart NiFi
+  #     service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC12 GÖREVLERİ
@@ -33,11 +33,7 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
+    # notify silindi
 
 # -----------------------------------------------------------------
 # DC13 GÖREVLERİ
@@ -53,11 +49,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC14 GÖREVLERİ
@@ -73,11 +64,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC15 GÖREVLERİ
@@ -93,11 +79,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC16 GÖREVLERİ
@@ -113,11 +94,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC17 GÖREVLERİ
@@ -133,11 +109,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC-AZ11 (Azure) GÖREVLERİ
@@ -153,11 +124,6 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
 
 # -----------------------------------------------------------------
 # DC-ICT11 GÖREVLERİ
@@ -173,8 +139,3 @@
         owner: root
         group: root
         mode: '0640'
-      notify: Restart NiFi
-
-  handlers:
-    - name: Restart NiFi
-      service: name=nifi state=restarted
