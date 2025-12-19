@@ -10,8 +10,8 @@
       copy:
         src: ../files/dc11/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root  # <-- DÜZELTİLDİ (Eskisi: nifi)
+        group: root  # <-- DÜZELTİLDİ (Eskisi: nifi)
         mode: '0640'
       notify: Restart NiFi
 
@@ -30,8 +30,8 @@
       copy:
         src: ../files/dc12/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -50,8 +50,8 @@
       copy:
         src: ../files/dc13/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -70,8 +70,8 @@
       copy:
         src: ../files/dc14/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -90,8 +90,8 @@
       copy:
         src: ../files/dc15/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -110,8 +110,8 @@
       copy:
         src: ../files/dc16/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -130,8 +130,8 @@
       copy:
         src: ../files/dc17/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -150,8 +150,8 @@
       copy:
         src: ../files/dcaz11/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
@@ -170,8 +170,8 @@
       copy:
         src: ../files/dcict11/
         dest: /opt/nifi/conf/
-        owner: nifi
-        group: nifi
+        owner: root
+        group: root
         mode: '0640'
       notify: Restart NiFi
 
