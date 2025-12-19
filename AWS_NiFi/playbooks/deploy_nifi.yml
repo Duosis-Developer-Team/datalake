@@ -1,16 +1,5 @@
 ---
 # -----------------------------------------------------------------
-# GLOBAL TANIMLAR
-# -----------------------------------------------------------------
-# Hedef sunucularda dosyaların kopyalanacağı yer.
-# Burayı değiştirmek istersen tek bir yerden değiştirebilirsin.
-- hosts: all
-  vars:
-    nifi_dest_path: /opt/nifi/conf/
-    nifi_user: nifi
-    nifi_group: nifi
-
-# -----------------------------------------------------------------
 # DC11 GÖREVLERİ
 # -----------------------------------------------------------------
 - name: DC11 NiFi Guncellemesi
@@ -20,9 +9,9 @@
     - name: DC11 dosyalarini kopyala
       copy:
         src: ../files/dc11/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -40,9 +29,9 @@
     - name: DC12 dosyalarini kopyala
       copy:
         src: ../files/dc12/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -60,9 +49,9 @@
     - name: DC13 dosyalarini kopyala
       copy:
         src: ../files/dc13/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -80,9 +69,9 @@
     - name: DC14 dosyalarini kopyala
       copy:
         src: ../files/dc14/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -100,9 +89,9 @@
     - name: DC15 dosyalarini kopyala
       copy:
         src: ../files/dc15/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -120,9 +109,9 @@
     - name: DC16 dosyalarini kopyala
       copy:
         src: ../files/dc16/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -140,9 +129,9 @@
     - name: DC17 dosyalarini kopyala
       copy:
         src: ../files/dc17/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -160,9 +149,9 @@
     - name: DCAZ11 dosyalarini kopyala
       copy:
         src: ../files/dcaz11/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
@@ -180,9 +169,9 @@
     - name: DCICT11 dosyalarini kopyala
       copy:
         src: ../files/dcict11/
-        dest: "{{ nifi_dest_path }}"
-        owner: "{{ nifi_user }}"
-        group: "{{ nifi_group }}"
+        dest: /opt/nifi/conf/
+        owner: nifi
+        group: nifi
         mode: '0640'
       notify: Restart NiFi
 
