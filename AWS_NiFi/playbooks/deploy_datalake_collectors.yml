@@ -26,6 +26,7 @@
         # ---------------------------------------------------------
         rsync_opts:
           - "--checksum"
+          - "--itemize-changes"
           - "--no-perms"
           - "--no-owner"
           - "--no-group"
@@ -36,3 +37,5 @@
       # !!! BURASI ÇOK ÖNEMLİ !!!
       # Localde (AWX içinde) root olmaya çalışma, normal kullanıcı olarak rsync başlat
       become: no
+      register: rsync_result
+      changed_when: rsync_result.stdout | default('') | regex_search('^[<>ch]', multiline=True) is not none
