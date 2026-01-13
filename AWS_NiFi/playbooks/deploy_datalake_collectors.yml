@@ -1,47 +1,34 @@
 ---
 - name: Datalake Collectors Senkronizasyonu
   hosts: all
-  become: yes
+  # Playbook genelinde become: yes olabilir ama synchronize'da kapatacağız
+  become: yes 
 
   vars:
     target_path: /Datalake_Project/
+    # Host Key sormasını ve takılmasını engelleyen ayar
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
   tasks:
-    - name: Hedef klasörün var olduğundan emin ol
-      file:
-        path: "{{ target_path }}"
-        state: directory
-        mode: '0755'
-
-    - name: Mevcut configuration_file.json'u yedekle (varsa)
-      shell: |
-        if [ -f "{{ target_path }}/configuration_file.json" ]; then
-          cp "{{ target_path }}/configuration_file.json" /tmp/configuration_file.json.backup
-        fi
-      changed_when: false
-      failed_when: false
-
-    - name: GitHub collectors klasörünü sunucuya kopyala
-      copy:
-        src: ../collectors/
+    - name: GitHub collectors klasörünü sunucuya eşitle (Rsync + Password)
+      synchronize:
+        src: ../../collectors/
         dest: "{{ target_path }}"
-        mode: preserve
-        directory_mode: '0755'
-
-    - name: Yedeklenen configuration_file.json'u geri yükle (varsa)
-      shell: |
-        if [ -f "/tmp/configuration_file.json.backup" ]; then
-          mv /tmp/configuration_file.json.backup "{{ target_path }}/configuration_file.json"
-        fi
-      changed_when: false
-      failed_when: false
-
-    - name: Gereksiz dosyaları temizle
-      file:
-        path: "{{ target_path }}/{{ item }}"
-        state: absent
-      loop:
-        - configuration_file.json.example
-        - .git
-        - .gitkeep
-      failed_when: false
+        archive: no
+        recursive: yes
+        delete: no
+        # ---------------------------------------------------------
+        # KRİTİK AYAR 1: Şifreli bağlantıyı kullan
+        use_ssh_args: yes
+        private_key: no
+        # KRİTİK AYAR 2: Karşı tarafta (sunucuda) root yetkisiyle yaz
+        rsync_path: "sudo rsync"
+        # ---------------------------------------------------------
+        rsync_opts:
+          - "--exclude=configuration_file.json"
+          - "--exclude=configuration_file.json.example"
+          - "--exclude=.git"
+          - "--exclude=.gitkeep"
+      # !!! BURASI ÇOK ÖNEMLİ !!!
+      # Localde (AWX içinde) root olmaya çalışma, normal kullanıcı olarak rsync başlat
+      become: no
