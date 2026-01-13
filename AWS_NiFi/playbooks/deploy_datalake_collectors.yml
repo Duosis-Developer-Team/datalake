@@ -1,13 +1,16 @@
 ---
 - name: Datalake Collectors Senkronizasyonu
   hosts: all
-  become: yes
+  # Playbook genelinde become: yes olabilir ama synchronize'da kapatacağız
+  become: yes 
 
   vars:
     target_path: /Datalake_Project/
+    # Host Key sormasını ve takılmasını engelleyen ayar
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
   tasks:
-    - name: GitHub collectors klasörünü sunucuya eşitle (Password Auth Zorlama)
+    - name: GitHub collectors klasörünü sunucuya eşitle (Rsync + Password)
       synchronize:
         src: ../collectors/
         dest: "{{ target_path }}"
@@ -15,25 +18,17 @@
         recursive: yes
         delete: no
         # ---------------------------------------------------------
-        # KRİTİK AYARLAR BURADA:
-        # 1. SSH Key aramayı kapatıyoruz.
-        private_key: no
-        # 2. Ansible'ın genel SSH argümanlarını (şifre vs.) kullan diyoruz.
+        # KRİTİK AYAR 1: Şifreli bağlantıyı kullan
         use_ssh_args: yes
+        private_key: no
+        # KRİTİK AYAR 2: Karşı tarafta (sunucuda) root yetkisiyle yaz
+        rsync_path: "sudo rsync"
         # ---------------------------------------------------------
         rsync_opts:
           - "--exclude=configuration_file.json"
           - "--exclude=configuration_file.json.example"
           - "--exclude=.git"
           - "--exclude=.gitkeep"
-      # Rsync çalışırken "Host Key" sorup takılmasın diye bu variable'ı SADECE bu task için eziyoruz:
-      vars:
-        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-
-    - name: Dosya sahipliğini root olarak ayarla
-      file:
-        path: "{{ target_path }}"
-        owner: root
-        group: root
-        recurse: yes
-        mode: '0755'
+      # !!! BURASI ÇOK ÖNEMLİ !!!
+      # Localde (AWX içinde) root olmaya çalışma, normal kullanıcı olarak rsync başlat
+      become: no
