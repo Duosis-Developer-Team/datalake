@@ -26,6 +26,9 @@
         # ---------------------------------------------------------
         rsync_opts:
           - "--checksum"
+          - "--no-perms"
+          - "--no-owner"
+          - "--no-group"
           - "--exclude=configuration_file.json"
           - "--exclude=configuration_file.json.example"
           - "--exclude=.git"
