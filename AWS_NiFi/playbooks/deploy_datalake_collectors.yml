@@ -21,6 +21,7 @@
         rsync_opts:
           - "--checksum"
           - "--itemize-changes"
+          - "--omit-dir-times"
           - "--no-perms"
           - "--no-owner"
           - "--no-group"
