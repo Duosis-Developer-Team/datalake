@@ -1,34 +1,35 @@
 ---
 - name: Datalake Collectors Senkronizasyonu
-  # "all" diyerek AWS Envanterinden gelen tüm sunucuları hedefliyoruz.
-  # IP adreslerini AWX, AWS'ten kendisi çekecek.
   hosts: all
   become: yes
-  
+
   vars:
-    # Sunucudaki hedef klasör (Ekran görüntüne göre kök dizinde)
     target_path: /Datalake_Project/
 
   tasks:
-    # 1. Adım: Dosya Transferi (Güvenli Mod)
-    - name: GitHub collectors klasörünü sunucuya eşitle
+    - name: GitHub collectors klasörünü sunucuya eşitle (Password Auth Zorlama)
       synchronize:
-        # Playbook "playbooks/" içinde olduğu için bir üst klasöre çıkıp collectors'ü alıyoruz
         src: ../collectors/
         dest: "{{ target_path }}"
-        # "archive: no" ve "recursive: yes" ile sadece içerik kopyalanır
         archive: no
         recursive: yes
-        # KRİTİK AYAR: delete=no (Sunucuda olup Git'te olmayan Loki, Backup gibi klasörleri SİLMEZ)
         delete: no
-        # Hariç tutulacak dosyalar
+        # ---------------------------------------------------------
+        # KRİTİK AYARLAR BURADA:
+        # 1. SSH Key aramayı kapatıyoruz.
+        private_key: no
+        # 2. Ansible'ın genel SSH argümanlarını (şifre vs.) kullan diyoruz.
+        use_ssh_args: yes
+        # ---------------------------------------------------------
         rsync_opts:
           - "--exclude=configuration_file.json"
           - "--exclude=configuration_file.json.example"
           - "--exclude=.git"
           - "--exclude=.gitkeep"
+      # Rsync çalışırken "Host Key" sorup takılmasın diye bu variable'ı SADECE bu task için eziyoruz:
+      vars:
+        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-    # 2. Adım: İzinleri Düzenleme
     - name: Dosya sahipliğini root olarak ayarla
       file:
         path: "{{ target_path }}"
@@ -36,5 +37,3 @@
         group: root
         recurse: yes
         mode: '0755'
-      # Config dosyasının izinlerinin bozulmadığından emin olmak için bu adımda
-      # configuration_file.json hariç tutulabilir ama root olması genelde sorun yaratmaz.
