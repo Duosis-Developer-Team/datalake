@@ -1,40 +1,34 @@
 ---
 - name: Datalake Collectors Senkronizasyonu
-  # "all" diyerek AWS Envanterinden gelen tüm sunucuları hedefliyoruz.
-  # IP adreslerini AWX, AWS'ten kendisi çekecek.
   hosts: all
-  become: yes
-  
+  # Playbook genelinde become: yes olabilir ama synchronize'da kapatacağız
+  become: yes 
+
   vars:
-    # Sunucudaki hedef klasör (Ekran görüntüne göre kök dizinde)
     target_path: /Datalake_Project/
+    # Host Key sormasını ve takılmasını engelleyen ayar
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
   tasks:
-    # 1. Adım: Dosya Transferi (Güvenli Mod)
-    - name: GitHub collectors klasörünü sunucuya eşitle
+    - name: GitHub collectors klasörünü sunucuya eşitle (Rsync + Password)
       synchronize:
-        # Playbook "playbooks/" içinde olduğu için bir üst klasöre çıkıp collectors'ü alıyoruz
         src: ../collectors/
         dest: "{{ target_path }}"
-        # "archive: no" ve "recursive: yes" ile sadece içerik kopyalanır
         archive: no
         recursive: yes
-        # KRİTİK AYAR: delete=no (Sunucuda olup Git'te olmayan Loki, Backup gibi klasörleri SİLMEZ)
         delete: no
-        # Hariç tutulacak dosyalar
+        # ---------------------------------------------------------
+        # KRİTİK AYAR 1: Şifreli bağlantıyı kullan
+        use_ssh_args: yes
+        private_key: no
+        # KRİTİK AYAR 2: Karşı tarafta (sunucuda) root yetkisiyle yaz
+        rsync_path: "sudo rsync"
+        # ---------------------------------------------------------
         rsync_opts:
           - "--exclude=configuration_file.json"
           - "--exclude=configuration_file.json.example"
           - "--exclude=.git"
           - "--exclude=.gitkeep"
-
-    # 2. Adım: İzinleri Düzenleme
-    - name: Dosya sahipliğini root olarak ayarla
-      file:
-        path: "{{ target_path }}"
-        owner: root
-        group: root
-        recurse: yes
-        mode: '0755'
-      # Config dosyasının izinlerinin bozulmadığından emin olmak için bu adımda
-      # configuration_file.json hariç tutulabilir ama root olması genelde sorun yaratmaz.
+      # !!! BURASI ÇOK ÖNEMLİ !!!
+      # Localde (AWX içinde) root olmaya çalışma, normal kullanıcı olarak rsync başlat
+      become: no
