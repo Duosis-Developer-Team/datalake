@@ -14,7 +14,7 @@
       synchronize:
         src: ../../collectors/
         dest: "{{ target_path }}"
-        archive: no
+        archive: yes
         recursive: yes
         delete: no
         # ---------------------------------------------------------
@@ -25,6 +25,7 @@
         rsync_path: "sudo rsync"
         # ---------------------------------------------------------
         rsync_opts:
+          - "--checksum"
           - "--exclude=configuration_file.json"
           - "--exclude=configuration_file.json.example"
           - "--exclude=.git"
