@@ -1,0 +1,38 @@
+---
+- name: HMDL Development - NiFi Deployment
+  hosts: all
+  become: yes
+  vars:
+    # Hedef Sunucudaki Yollar
+    target_path: "/Datalake_Project/"
+    backup_base_path: "/backup/datalake_configs/"
+    # Repo içindeki kaynak klasör
+    source_folder: "collectors/"
+
+  tasks:
+    # ---------------------------------------------------------
+    # 1. GÜVENLİK: Önce mevcudu yedekle (Conf dosyaları kaybolmasın)
+    # ---------------------------------------------------------
+    - name: Yedekleme Klasörü Oluştur
+      file:
+        path: "{{ backup_base_path }}backup_{{ ansible_date_time.iso8601_basic_short }}"
+        state: directory
+        mode: '0755'
+
+    - name: Mevcut Dosyaları Yedekle
+      copy:
+        remote_src: yes
+        src: "{{ target_path }}"
+        dest: "{{ backup_base_path }}backup_{{ ansible_date_time.iso8601_basic_short }}/"
+        fail_on_missing: no 
+        # Klasör boşsa veya yoksa hata vermez, devam eder.
+
+    # ---------------------------------------------------------
+    # 2. DAĞITIM: Yeni dosyaları yükle
+    # ---------------------------------------------------------
+    - name: AWX'ten Sunucuya Dosyaları Kopyala
+      copy:
+        src: "{{ playbook_dir }}/{{ source_folder }}"
+        dest: "{{ target_path }}"
+        mode: '0755'
+        force: yes
