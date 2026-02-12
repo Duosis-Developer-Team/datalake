@@ -1,0 +1,168 @@
+{
+  "type": "record",
+  "name": "netbox_virtualization_vm",
+  "namespace": "datalake.netbox",
+  "fields": [
+    { "name": "data_type", "type": ["null", "string"] },
+
+    { "name": "count", "type": ["null", "long"] },
+    { "name": "id", "type": ["null", "long"] },
+
+    { "name": "url", "type": ["null", "string"] },
+    { "name": "display_url", "type": ["null", "string"] },
+    { "name": "display", "type": ["null", "string"] },
+    { "name": "name", "type": ["null", "string"] },
+
+    { "name": "status_value", "type": ["null", "string"] },
+    { "name": "status_label", "type": ["null", "string"] },
+
+    { "name": "site_id", "type": ["null", "long"] },
+    { "name": "site_url", "type": ["null", "string"] },
+    { "name": "site_display", "type": ["null", "string"] },
+    { "name": "site_name", "type": ["null", "string"] },
+    { "name": "site_slug", "type": ["null", "string"] },
+    { "name": "site_description", "type": ["null", "string"] },
+
+    { "name": "cluster_id", "type": ["null", "long"] },
+    { "name": "cluster_url", "type": ["null", "string"] },
+    { "name": "cluster_display", "type": ["null", "string"] },
+    { "name": "cluster_name", "type": ["null", "string"] },
+    { "name": "cluster_description", "type": ["null", "string"] },
+
+    { "name": "device_id", "type": ["null", "long"] },
+    { "name": "device_url", "type": ["null", "string"] },
+    { "name": "device_display", "type": ["null", "string"] },
+    { "name": "device_name", "type": ["null", "string"] },
+    { "name": "device_description", "type": ["null", "string"] },
+
+    { "name": "serial", "type": ["null", "string"] },
+    { "name": "role", "type": ["null", "string"] },
+    { "name": "tenant", "type": ["null", "string"] },
+    { "name": "platform", "type": ["null", "string"] },
+
+    { "name": "primary_ip", "type": ["null", "string"] },
+    { "name": "primary_ip4", "type": ["null", "string"] },
+    { "name": "primary_ip6", "type": ["null", "string"] },
+
+    { "name": "vcpus", "type": ["null", "long"] },
+    { "name": "memory", "type": ["null", "long"] },
+    { "name": "disk", "type": ["null", "long"] },
+
+    { "name": "description", "type": ["null", "string"] },
+    { "name": "comments", "type": ["null", "string"] },
+    { "name": "config_template", "type": ["null", "string"] },
+    { "name": "local_context_data", "type": ["null", "string"] },
+    { "name": "config_context", "type": ["null", "string"] },
+
+    { "name": "tags1_id", "type": ["null", "long"] },
+    { "name": "tags1_url", "type": ["null", "string"] },
+    { "name": "tags1_display_url", "type": ["null", "string"] },
+    { "name": "tags1_display", "type": ["null", "string"] },
+    { "name": "tags1_name", "type": ["null", "string"] },
+    { "name": "tags1_slug", "type": ["null", "string"] },
+    { "name": "tags1_color", "type": ["null", "string"] },
+
+    { "name": "tags2_id", "type": ["null", "long"] },
+    { "name": "tags2_url", "type": ["null", "string"] },
+    { "name": "tags2_display_url", "type": ["null", "string"] },
+    { "name": "tags2_display", "type": ["null", "string"] },
+    { "name": "tags2_name", "type": ["null", "string"] },
+    { "name": "tags2_slug", "type": ["null", "string"] },
+    { "name": "tags2_color", "type": ["null", "string"] },
+
+    { "name": "tags3_id", "type": ["null", "long"] },
+    { "name": "tags3_url", "type": ["null", "string"] },
+    { "name": "tags3_display_url", "type": ["null", "string"] },
+    { "name": "tags3_display", "type": ["null", "string"] },
+    { "name": "tags3_name", "type": ["null", "string"] },
+    { "name": "tags3_slug", "type": ["null", "string"] },
+    { "name": "tags3_color", "type": ["null", "string"] },
+
+    { "name": "tags4_id", "type": ["null", "long"] },
+    { "name": "tags4_url", "type": ["null", "string"] },
+    { "name": "tags4_display_url", "type": ["null", "string"] },
+    { "name": "tags4_display", "type": ["null", "string"] },
+    { "name": "tags4_name", "type": ["null", "string"] },
+    { "name": "tags4_slug", "type": ["null", "string"] },
+    { "name": "tags4_color", "type": ["null", "string"] },
+
+    { "name": "tags5_id", "type": ["null", "long"] },
+    { "name": "tags5_url", "type": ["null", "string"] },
+    { "name": "tags5_display_url", "type": ["null", "string"] },
+    { "name": "tags5_display", "type": ["null", "string"] },
+    { "name": "tags5_name", "type": ["null", "string"] },
+    { "name": "tags5_slug", "type": ["null", "string"] },
+    { "name": "tags5_color", "type": ["null", "string"] },
+
+    { "name": "custom_fields_config_instance_uuid", "type": ["null", "string"] },
+    { "name": "custom_fields_config_uuid", "type": ["null", "string"] },
+    { "name": "custom_fields_datastore_name", "type": ["null", "string"] },
+    { "name": "custom_fields_endpoint", "type": ["null", "string"] },
+    { "name": "custom_fields_guest_os", "type": ["null", "string"] },
+
+    { "name": "custom_fields_hard_disk_info1_label", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info1_backing", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info1_capacity_kb", "type": ["null", "long"] },
+
+    { "name": "custom_fields_hard_disk_info2_label", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info2_backing", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info2_capacity_kb", "type": ["null", "long"] },
+
+    { "name": "custom_fields_hard_disk_info3_label", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info3_backing", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info3_capacity_kb", "type": ["null", "long"] },
+
+    { "name": "custom_fields_hard_disk_info4_label", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info4_backing", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info4_capacity_kb", "type": ["null", "long"] },
+
+    { "name": "custom_fields_hard_disk_info5_label", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info5_backing", "type": ["null", "string"] },
+    { "name": "custom_fields_hard_disk_info5_capacity_kb", "type": ["null", "long"] },
+
+    { "name": "custom_fields_ip_addresses", "type": ["null", "string"] },
+    { "name": "custom_fields_moid", "type": ["null", "string"] },
+    { "name": "custom_fields_musteri", "type": ["null", "string"] },
+    { "name": "custom_fields_price_id", "type": ["null", "string"] },
+    { "name": "custom_fields_uuid", "type": ["null", "string"] },
+    { "name": "custom_fields_vm_name", "type": ["null", "string"] },
+    { "name": "custom_fields_vm_olusturulma_tarihi", "type": ["null", "string"] },
+    { "name": "custom_fields_vmx_path", "type": ["null", "string"] },
+
+    {
+      "name": "created",
+      "type": [
+        "null",
+        {
+          "type": "long",
+          "logicalType": "timestamp-millis"
+        }
+      ]
+    },
+    {
+      "name": "last_updated",
+      "type": [
+        "null",
+        {
+          "type": "long",
+          "logicalType": "timestamp-millis"
+        }
+      ]
+    },
+
+    { "name": "interface_count", "type": ["null", "long"] },
+    { "name": "virtual_disk_count", "type": ["null", "long"] },
+
+    {
+      "name": "collection_time",
+      "type": [
+        "null",
+        {
+          "type": "long",
+          "logicalType": "timestamp-millis"
+        }
+      ]
+    }
+  ]
+}
+
