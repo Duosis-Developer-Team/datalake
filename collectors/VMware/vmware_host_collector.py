@@ -69,6 +69,14 @@ def safe_timestamp(dt_obj):
         return None
 
 
+def serialize_record(record):
+    """Serialize any list/array fields to JSON strings for PostgreSQL compatibility."""
+    for key, value in record.items():
+        if isinstance(value, (list, tuple)) and not isinstance(value, str):
+            record[key] = json.dumps(value)
+    return record
+
+
 def extract_host_hardware(host, vcenter_uuid, collection_timestamp, hierarchy):
     """
     Extract host hardware configuration AS-IS from VMware API.

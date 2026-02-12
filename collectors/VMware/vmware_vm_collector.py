@@ -69,6 +69,14 @@ def safe_timestamp(dt_obj):
         return None
 
 
+def serialize_record(record):
+    """Serialize any list/array fields to JSON strings for PostgreSQL compatibility."""
+    for key, value in record.items():
+        if isinstance(value, (list, tuple)) and not isinstance(value, str):
+            record[key] = json.dumps(value)
+    return record
+
+
 def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
     """
     Extract VM configuration data AS-IS from VMware API.
@@ -77,7 +85,7 @@ def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
     config = vm.summary.config
     vm_config = vm.config
     
-    return {
+    record = {
         "data_type": "vmware_vm_config",
         "collection_timestamp": collection_timestamp,
         "vcenter_uuid": vcenter_uuid,
@@ -113,6 +121,7 @@ def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
         "managed_by_type": safe_get_attr(vm_config, 'managedBy.type'),
         "version": safe_get_attr(vm_config, 'version'),
     }
+    return serialize_record(record)
 
 
 def extract_vm_runtime(vm, vcenter_uuid, collection_timestamp):
@@ -133,7 +142,7 @@ def extract_vm_runtime(vm, vcenter_uuid, collection_timestamp):
     if hasattr(runtime, 'featureRequirement') and runtime.featureRequirement:
         feature_req = json.dumps([str(f) for f in runtime.featureRequirement])
     
-    return {
+    record = {
         "data_type": "vmware_vm_runtime",
         "collection_timestamp": collection_timestamp,
         "vcenter_uuid": vcenter_uuid,
@@ -194,6 +203,7 @@ def extract_vm_runtime(vm, vcenter_uuid, collection_timestamp):
         "quick_stats_uptime_seconds": safe_get_attr(qs, 'uptimeSeconds'),
         "quick_stats_ssd_swapped_memory": safe_get_attr(qs, 'ssdSwappedMemory'),
     }
+    return serialize_record(record)
 
 
 def extract_vm_storage(vm, vcenter_uuid, collection_timestamp):
@@ -209,7 +219,7 @@ def extract_vm_storage(vm, vcenter_uuid, collection_timestamp):
         return storage_records
     
     for ds in vm.datastore:
-        storage_records.append({
+        record = {
             "data_type": "vmware_vm_storage",
             "collection_timestamp": collection_timestamp,
             "vcenter_uuid": vcenter_uuid,
@@ -229,7 +239,8 @@ def extract_vm_storage(vm, vcenter_uuid, collection_timestamp):
             "committed": safe_get_attr(storage, 'committed'),
             "uncommitted": safe_get_attr(storage, 'uncommitted'),
             "unshared": safe_get_attr(storage, 'unshared'),
-        })
+        }
+        storage_records.append(serialize_record(record))
     
     return storage_records
 
@@ -298,7 +309,7 @@ def extract_vm_perf_raw(vm, vcenter_uuid, collection_timestamp, perf_mgr, counte
             for i, value in enumerate(perf_metric.value):
                 sample_time = start_time + timedelta(seconds=i * interval_seconds)
                 
-                perf_raw_records.append({
+                record = {
                     "data_type": "vmware_vm_perf_raw",
                     "collection_timestamp": collection_timestamp,
                     "vcenter_uuid": vcenter_uuid,
@@ -319,7 +330,8 @@ def extract_vm_perf_raw(vm, vcenter_uuid, collection_timestamp, perf_mgr, counte
                     "sample_timestamp": sample_time.isoformat(),
                     "value": value,
                     "interval_id": interval_id,
-                })
+                }
+                perf_raw_records.append(serialize_record(record))
     
     except Exception as e:
         print(f"Warning: Failed to extract perf data for VM {vm._moId}: {e}", file=sys.stderr)
@@ -357,7 +369,7 @@ def calculate_vm_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, 
         if not values:
             continue
         
-        perf_agg_records.append({
+        record = {
             "data_type": "vmware_vm_perf_agg",
             "collection_timestamp": collection_timestamp,
             "vcenter_uuid": vcenter_uuid,
@@ -384,7 +396,8 @@ def calculate_vm_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, 
             "value_stddev": None,  # Could calculate if needed
             "value_first": values[0],
             "value_last": values[-1],
-        })
+        }
+        perf_agg_records.append(serialize_record(record))
     
     return perf_agg_records
 
