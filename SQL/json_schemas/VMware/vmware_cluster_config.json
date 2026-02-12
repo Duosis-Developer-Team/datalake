@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "vmware_cluster_config",
+  "namespace": "datalake.vmware",
+  "fields": [
+    { "name": "data_type", "type": ["null", "string"] },
+    { "name": "collection_timestamp", "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}] },
+    { "name": "vcenter_uuid", "type": ["null", "string"] },
+    { "name": "datacenter_moid", "type": ["null", "string"] },
+    { "name": "cluster_moid", "type": ["null", "string"] },
+    { "name": "name", "type": ["null", "string"] },
+    
+    { "name": "summary_num_hosts", "type": ["null", "long"] },
+    { "name": "summary_num_cpu_cores", "type": ["null", "long"] },
+    { "name": "summary_num_cpu_threads", "type": ["null", "long"] },
+    { "name": "summary_effective_cpu", "type": ["null", "long"] },
+    { "name": "summary_total_cpu", "type": ["null", "long"] },
+    { "name": "summary_num_effective_hosts", "type": ["null", "long"] },
+    { "name": "summary_total_memory", "type": ["null", "long"] },
+    { "name": "summary_effective_memory", "type": ["null", "long"] },
+    { "name": "summary_overall_status", "type": ["null", "string"] },
+    
+    { "name": "config_das_enabled", "type": ["null", "boolean"] },
+    { "name": "config_das_vm_monitoring", "type": ["null", "string"] },
+    { "name": "config_das_host_monitoring", "type": ["null", "string"] },
+    
+    { "name": "config_drs_enabled", "type": ["null", "boolean"] },
+    { "name": "config_drs_default_vm_behavior", "type": ["null", "string"] },
+    { "name": "config_drs_vmotion_rate", "type": ["null", "long"] },
+    
+    { "name": "config_dpm_enabled", "type": ["null", "boolean"] }
+  ]
+}
