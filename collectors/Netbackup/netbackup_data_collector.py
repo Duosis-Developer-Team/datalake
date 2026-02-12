@@ -91,7 +91,7 @@ class NetBackupDataCollector:
             print(f"API hatası ({url}): {e}", file=sys.stderr)
             raise
     
-    def collect_jobs_data(self, since_minutes: Optional[int] = 60) -> Tuple[List[Dict], str]:
+    def collect_jobs_data(self, since_minutes: Optional[int] = 30) -> Tuple[List[Dict], str]:
         try:
             endpoint = "/netbackup/admin/jobs"
             params = {}
@@ -164,7 +164,7 @@ class NetBackupDataCollector:
         unique_timestamp = base_timestamp.replace(microsecond=entity_hash)
         return unique_timestamp.isoformat()
     
-    def collect_all_data(self, since_minutes: Optional[int] = 60) -> List[Dict]:
+    def collect_all_data(self, since_minutes: Optional[int] = 30) -> List[Dict]:
         all_data = []
         jobs_data, _ = self.collect_jobs_data(since_minutes)
         for job in jobs_data:
@@ -194,7 +194,7 @@ def main():
     parser.add_argument("--username", type=str)
     parser.add_argument("--password", type=str)
     parser.add_argument("--token", type=str)
-    parser.add_argument("--since-minutes", type=int, default=60)
+    parser.add_argument("--since-minutes", type=int, default=30)
     args = parser.parse_args()
     
     hosts_fqdn_list = []
