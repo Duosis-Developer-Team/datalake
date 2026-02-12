@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS raw_vmware_host_hardware (
     system_info_vendor TEXT,
     system_info_model TEXT,
     system_info_uuid TEXT,
-    system_info_other_identifying_info TEXT[],
+    system_info_other_identifying_info TEXT,
     
     -- host.config.product fields (AS-IS from VMware API)
     product_name TEXT,

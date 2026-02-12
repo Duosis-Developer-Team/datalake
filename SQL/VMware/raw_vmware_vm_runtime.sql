@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS raw_vmware_vm_runtime (
     online_standby BOOLEAN,
     min_required_evc_mode_key TEXT,
     consolidation_needed BOOLEAN,
-    offline_feature_requirement TEXT[],
-    feature_requirement TEXT[],
+    offline_feature_requirement TEXT,
+    feature_requirement TEXT,
     
     -- vm.guest fields (AS-IS from VMware API)
     guest_tools_status TEXT,

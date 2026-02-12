@@ -57,10 +57,13 @@ def safe_get_attr(obj, attr_path, default=None):
 
 
 def safe_timestamp(dt_obj):
-    """Convert datetime object to ISO-8601 string."""
+    """Convert datetime object to ISO-8601 string. Returns None for epoch time (unset timestamps)."""
     if dt_obj is None:
         return None
     try:
+        # Check if timestamp is epoch time (1970-01-01) = unset timestamp in VMware
+        if dt_obj.year == 1970 and dt_obj.month == 1 and dt_obj.day == 1:
+            return None
         return dt_obj.isoformat()
     except:
         return None
@@ -121,14 +124,14 @@ def extract_vm_runtime(vm, vcenter_uuid, collection_timestamp):
     guest = vm.guest
     qs = vm.summary.quickStats
     
-    # Handle array fields
-    offline_feature_req = []
+    # Handle array fields - serialize to JSON strings for PostgreSQL compatibility
+    offline_feature_req = None
     if hasattr(runtime, 'offlineFeatureRequirement') and runtime.offlineFeatureRequirement:
-        offline_feature_req = [str(f) for f in runtime.offlineFeatureRequirement]
+        offline_feature_req = json.dumps([str(f) for f in runtime.offlineFeatureRequirement])
     
-    feature_req = []
+    feature_req = None
     if hasattr(runtime, 'featureRequirement') and runtime.featureRequirement:
-        feature_req = [str(f) for f in runtime.featureRequirement]
+        feature_req = json.dumps([str(f) for f in runtime.featureRequirement])
     
     return {
         "data_type": "vmware_vm_runtime",

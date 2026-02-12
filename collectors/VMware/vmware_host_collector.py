@@ -57,10 +57,13 @@ def safe_get_attr(obj, attr_path, default=None):
 
 
 def safe_timestamp(dt_obj):
-    """Convert datetime object to ISO-8601 string."""
+    """Convert datetime object to ISO-8601 string. Returns None for epoch time (unset timestamps)."""
     if dt_obj is None:
         return None
     try:
+        # Check if timestamp is epoch time (1970-01-01) = unset timestamp in VMware
+        if dt_obj.year == 1970 and dt_obj.month == 1 and dt_obj.day == 1:
+            return None
         return dt_obj.isoformat()
     except:
         return None
@@ -75,10 +78,10 @@ def extract_host_hardware(host, vcenter_uuid, collection_timestamp, hierarchy):
     sys_info = host.hardware.systemInfo
     product = host.config.product
     
-    # Handle array field
-    other_id_info = []
+    # Handle array field - serialize to JSON string for PostgreSQL compatibility
+    other_id_info = None
     if hasattr(sys_info, 'otherIdentifyingInfo') and sys_info.otherIdentifyingInfo:
-        other_id_info = [str(info) for info in sys_info.otherIdentifyingInfo]
+        other_id_info = json.dumps([str(info) for info in sys_info.otherIdentifyingInfo])
     
     return {
         "data_type": "vmware_host_hardware",
