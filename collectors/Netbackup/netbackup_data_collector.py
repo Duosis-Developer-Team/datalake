@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 NetBackup Data Collector
-Zerto collector mantığıyla NetBackup verilerini toplar ve JSON formatında stdout'a yazdırır.
-NiFi flow'u ile uyumlu çalışır.
+Hem NiFi (IP input) hem Manuel (Hostname input) kullanimda
+Config dosyasindan dogru eslesmeyi yaparak Rapora IP basar.
 """
 
 import requests
@@ -24,20 +24,19 @@ class NetBackupDataCollector:
     def __init__(self, connect_host: str, report_ip: str, username: str = None, password: str = None, token: str = None):
         """
         Args:
-            connect_host: Bağlantı kurulacak adres (Hostname/FQDN - SSL için)
+            connect_host: Bağlantı kurulacak FQDN (SSL için)
             report_ip: JSON çıktısında 'netbackup_host' alanına yazılacak IP
         """
         self.connect_host = connect_host
-        self.report_ip = report_ip  # Bu alan JSON çıktısında kullanılacak
+        self.report_ip = report_ip 
         
         self.username = username
         self.password = password
         self.token = token
         
-        # Bağlantı URL'i Hostname ile oluşturulur (SSL hatası almamak için)
+        # URL oluşturulurken Hostname kullanılır
         self.base_url = f"https://{self.connect_host}"
         self.session = requests.Session()
-        
         self.session.verify = False
         
         import ssl
@@ -72,15 +71,8 @@ class NetBackupDataCollector:
     def get_auth_token(self) -> str:
         try:
             auth_url = f"{self.base_url}/netbackup/login"
-            auth_data = {
-                "userName": self.username,
-                "password": self.password
-            }
-            headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Host": self.connect_host
-            }
+            auth_data = {"userName": self.username, "password": self.password}
+            headers = {"Content-Type": "application/json", "Accept": "application/json", "Host": self.connect_host}
             
             response = self.session.post(auth_url, json=auth_data, headers=headers, timeout=30, verify=False)
             response.raise_for_status()
@@ -103,7 +95,6 @@ class NetBackupDataCollector:
         try:
             endpoint = "/netbackup/admin/jobs"
             params = {}
-            
             if since_minutes is not None:
                 now = datetime.now(timezone.utc)
                 time_limit = now - timedelta(minutes=since_minutes)
@@ -114,7 +105,6 @@ class NetBackupDataCollector:
             
             jobs_data = self.make_request(endpoint, params)
             jobs_list = []
-            
             all_jobs = jobs_data.get("data", [])
             next_url = jobs_data.get("links", {}).get("next", {}).get("href")
             
@@ -131,27 +121,17 @@ class NetBackupDataCollector:
             for job in all_jobs:
                 attrs = job.get("attributes", {})
                 job_data = {
-                    'id': job.get("id"),
-                    'type': job.get("type"),
-                    'jobId': attrs.get("jobId"),
-                    'policyName': attrs.get("policyName"),
-                    'clientName': attrs.get("clientName"),
-                    'state': attrs.get("state"),
-                    'status': attrs.get("status"),
-                    'jobType': attrs.get("jobType"),
-                    'startTime': attrs.get("startTime"),
-                    'endTime': attrs.get("endTime"),
-                    'lastUpdateTime': attrs.get("lastUpdateTime"),
-                    'kilobytesTransferred': attrs.get("kilobytesTransferred"),
-                    'percentComplete': attrs.get("percentComplete"),
-                    'parentJobId': attrs.get("parentJobId")
+                    'id': job.get("id"), 'type': job.get("type"), 'jobId': attrs.get("jobId"),
+                    'policyName': attrs.get("policyName"), 'clientName': attrs.get("clientName"),
+                    'state': attrs.get("state"), 'status': attrs.get("status"), 'jobType': attrs.get("jobType"),
+                    'startTime': attrs.get("startTime"), 'endTime': attrs.get("endTime"),
+                    'lastUpdateTime': attrs.get("lastUpdateTime"), 'kilobytesTransferred': attrs.get("kilobytesTransferred"),
+                    'percentComplete': attrs.get("percentComplete"), 'parentJobId': attrs.get("parentJobId")
                 }
                 jobs_list.append(job_data)
-            
-            server_timestamp = datetime.now(timezone.utc).isoformat()
-            return jobs_list, server_timestamp
+            return jobs_list, datetime.now(timezone.utc).isoformat()
         except Exception as e:
-            print(f"Jobs veri toplama hatası: {e}", file=sys.stderr)
+            print(f"Jobs hata: {e}", file=sys.stderr)
             return [], datetime.now(timezone.utc).isoformat()
     
     def collect_disk_pools_data(self) -> Tuple[List[Dict], str]:
@@ -159,24 +139,17 @@ class NetBackupDataCollector:
             endpoint = "/netbackup/storage/disk-pools"
             disk_pools_data = self.make_request(endpoint)
             disk_pools_list = []
-            
             for item in disk_pools_data.get("data", []):
                 attrs = item.get("attributes", {})
                 disk_pool_data = {
-                    'id': item.get("id"),
-                    'type': item.get("type"),
-                    'name': attrs.get("name"),
-                    'usedCapacityBytes': attrs.get("usedCapacityBytes"),
-                    'availableSpaceBytes': attrs.get("availableSpaceBytes"),
-                    'rawSizeBytes': attrs.get("rawSizeBytes"),
-                    'diskPoolState': attrs.get("diskPoolState")
+                    'id': item.get("id"), 'type': item.get("type"), 'name': attrs.get("name"),
+                    'usedCapacityBytes': attrs.get("usedCapacityBytes"), 'availableSpaceBytes': attrs.get("availableSpaceBytes"),
+                    'rawSizeBytes': attrs.get("rawSizeBytes"), 'diskPoolState': attrs.get("diskPoolState")
                 }
                 disk_pools_list.append(disk_pool_data)
-            
-            server_timestamp = datetime.now(timezone.utc).isoformat()
-            return disk_pools_list, server_timestamp
+            return disk_pools_list, datetime.now(timezone.utc).isoformat()
         except Exception as e:
-            print(f"Disk pools veri toplama hatası: {e}", file=sys.stderr)
+            print(f"Pools hata: {e}", file=sys.stderr)
             return [], datetime.now(timezone.utc).isoformat()
     
     def generate_unique_timestamp(self, entity_id: str, api_timestamp: Optional[str] = None) -> str:
@@ -193,45 +166,43 @@ class NetBackupDataCollector:
     
     def collect_all_data(self, since_minutes: Optional[int] = 60) -> List[Dict]:
         all_data = []
-        
-        # Jobs Data
         jobs_data, _ = self.collect_jobs_data(since_minutes)
         for job in jobs_data:
             entity_id = job.get('id') or str(job.get('jobId'))
             unique_ts = self.generate_unique_timestamp(entity_id, job.get('lastUpdateTime'))
             all_data.append({
-                'data_type': 'netbackup_job',
-                'collection_timestamp': unique_ts,
-                'netbackup_host': self.report_ip,  # BURADA ARTIK IP YAZIYOR
+                'data_type': 'netbackup_job', 'collection_timestamp': unique_ts,
+                'netbackup_host': self.report_ip, # IP BASAR
                 **job
             })
             
-        # Pools Data
         pools_data, _ = self.collect_disk_pools_data()
         for pool in pools_data:
             entity_id = pool.get('id') or pool.get('name')
             unique_ts = self.generate_unique_timestamp(entity_id)
             all_data.append({
-                'data_type': 'netbackup_disk_pool',
-                'collection_timestamp': unique_ts,
-                'netbackup_host': self.report_ip,  # BURADA ARTIK IP YAZIYOR
+                'data_type': 'netbackup_disk_pool', 'collection_timestamp': unique_ts,
+                'netbackup_host': self.report_ip, # IP BASAR
                 **pool
             })
-            
         return all_data
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str)
+    parser.add_argument("--hostname", type=str)
     parser.add_argument("--username", type=str)
     parser.add_argument("--password", type=str)
     parser.add_argument("--token", type=str)
     parser.add_argument("--since-minutes", type=int, default=60)
     args = parser.parse_args()
     
-    # Listeler
     hosts_fqdn_list = []
     hosts_ip_list = []
+    
+    # İki yönlü haritalama: Hem IP->Host hem Host->IP
+    map_ip_to_host = {}
+    map_host_to_ip = {}
     
     username = None
     password = None
@@ -239,7 +210,6 @@ def main():
     
     # 1. Config Dosyasını Oku
     config_paths = ["configuration_file.json", "Datalake_Project/configuration_file.json", "../configuration_file.json"]
-    config_loaded = False
     
     for path in config_paths:
         try:
@@ -247,73 +217,96 @@ def main():
                 config = json.load(f)
                 nb_conf = config.get('Netbackup', {})
                 
-                # Config stringlerini oku
                 ip_str = nb_conf.get('IpAddress', '')
                 host_str = nb_conf.get('Hostname', '')
                 
-                # Virgülle ayrılmış stringleri listeye çevir
-                if host_str:
-                    hosts_fqdn_list = [h.strip() for h in host_str.split(',') if h.strip()]
+                temp_fqdn = []
+                temp_ip = []
                 
-                if ip_str:
-                    hosts_ip_list = [i.strip() for i in ip_str.split(',') if i.strip()]
+                if host_str: temp_fqdn = [h.strip() for h in host_str.split(',') if h.strip()]
+                if ip_str: temp_ip = [i.strip() for i in ip_str.split(',') if i.strip()]
+                
+                # Varsayılan listeler
+                hosts_fqdn_list = temp_fqdn
+                hosts_ip_list = temp_ip
+                
+                # Mapping oluştur
+                if temp_fqdn and temp_ip:
+                    for i in range(min(len(temp_fqdn), len(temp_ip))):
+                        map_host_to_ip[temp_fqdn[i]] = temp_ip[i]
+                        map_ip_to_host[temp_ip[i]] = temp_fqdn[i]
                 
                 username = nb_conf.get('Username') or nb_conf.get('username')
                 password = nb_conf.get('Password') or nb_conf.get('password')
                 token = nb_conf.get('Bearer_token')
-                
-                config_loaded = True
-                print(f"Config: {len(hosts_fqdn_list)} Hostname, {len(hosts_ip_list)} IP bulundu.", file=sys.stderr)
-                break
-        except FileNotFoundError:
-            continue
-        except Exception as e:
-            print(f"Config okuma hatası: {e}", file=sys.stderr)
+                break 
+        except FileNotFoundError: continue
+        except Exception: continue
     
-    # 2. Command Line Override (Eğer manuel çalıştırılırsa)
+    # 2. Command Line Override (NiFi veya Manuel)
     if args.host:
-        # Manuel çalıştırıldığında host ve ip aynı kabul edilir (mapping yoksa)
-        hosts_fqdn_list = [args.host]
-        # Eğer config yüklenmediyse IP listesi de host ile aynı olur
-        if not hosts_ip_list:
-            hosts_ip_list = [args.host]
+        input_list = [h.strip() for h in args.host.split(',') if h.strip()]
+        hosts_fqdn_list = []
+        hosts_ip_list = []
         
-        if args.username: username = args.username
-        if args.password: password = args.password
-        if args.token: token = args.token
+        for item in input_list:
+            # Senaryo 1: Kullanıcı HOSTNAME girdi (Manuel kullanım: --host nbmaster...)
+            if item in map_host_to_ip:
+                print(f"Mod: Manuel (Hostname Girildi) -> {item}", file=sys.stderr)
+                hosts_fqdn_list.append(item)             # Bağlantı için Hostname
+                hosts_ip_list.append(map_host_to_ip[item]) # Rapor için Config'deki IP
+                
+            # Senaryo 2: Kullanıcı/NiFi IP girdi (NiFi kullanımı: --host 10.132...)
+            elif item in map_ip_to_host:
+                print(f"Mod: NiFi (IP Girildi) -> {item}", file=sys.stderr)
+                hosts_fqdn_list.append(map_ip_to_host[item]) # Bağlantı için Config'deki Hostname
+                hosts_ip_list.append(item)                   # Rapor için girilen IP
+                
+            # Senaryo 3: Bilinmeyen değer (Config'de yok)
+            else:
+                # Basit bir IP regex kontrolü veya varsayım
+                is_ip_structure = item.replace('.', '').isdigit() 
+                if is_ip_structure:
+                    print(f"Bilinmeyen IP: {item}, Hostname olarak da IP kullanılacak.", file=sys.stderr)
+                    hosts_fqdn_list.append(item)
+                    hosts_ip_list.append(item)
+                else:
+                    # Hostname girilmiş ama config'de yok, DNS'den IP bulmaya çalış
+                    print(f"Bilinmeyen Hostname: {item}, DNS'ten IP çözülecek.", file=sys.stderr)
+                    hosts_fqdn_list.append(item)
+                    try:
+                        resolved_ip = socket.gethostbyname(item)
+                        hosts_ip_list.append(resolved_ip)
+                    except:
+                        hosts_ip_list.append(item)
 
-    if not config_loaded and not args.host:
-        print("Hata: Config dosyası bulunamadı ve host argümanı girilmedi.", file=sys.stderr)
+    if args.username: username = args.username
+    if args.password: password = args.password
+    if args.token: token = args.token
+
+    if not hosts_fqdn_list:
+        print("Hata: İşlenecek host bulunamadı!", file=sys.stderr)
         sys.exit(1)
 
-    # 3. İşlem Döngüsü
     all_results = []
-    
-    # Hostname listesi üzerinden dönüyoruz
     for i, connect_host in enumerate(hosts_fqdn_list):
         try:
-            # Raporlanacak IP adresini bul (Sırası aynı olmalı)
-            # Eğer IP listesi daha kısaysa veya yoksa, mecburen Hostname kullanılır
             report_ip = hosts_ip_list[i] if i < len(hosts_ip_list) else connect_host
-            
-            print(f"İşleniyor -> Bağlanılan: {connect_host} | Rapora Yazılan IP: {report_ip}", file=sys.stderr)
+            print(f"Hedef: {connect_host} -> Raporlanacak IP: {report_ip}", file=sys.stderr)
             
             collector = NetBackupDataCollector(
-                connect_host=connect_host, # Bağlantı için FQDN
-                report_ip=report_ip,       # JSON çıktısı için IP
+                connect_host=connect_host,
+                report_ip=report_ip,
                 username=username,
                 password=password,
                 token=token
             )
-            
             data = collector.collect_all_data(since_minutes=args.since_minutes)
             all_results.extend(data)
-            
         except Exception as e:
             print(f"Hata ({connect_host}): {e}", file=sys.stderr)
             continue
             
-    # Sonuçları yazdır
     print(json.dumps(all_results, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
