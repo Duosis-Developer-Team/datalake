@@ -6,8 +6,8 @@ CREATE OR REPLACE VIEW vmware_host_storage_detail AS
 SELECT 
     s.collection_timestamp,
     s.vcenter_uuid,
-    s.datacenter_moid,
-    s.cluster_moid,
+    h.datacenter_moid,
+    h.cluster_moid,
     s.host_moid,
     
     -- Host Info
