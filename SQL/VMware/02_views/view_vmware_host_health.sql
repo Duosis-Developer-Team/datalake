@@ -6,8 +6,8 @@ CREATE OR REPLACE VIEW vmware_host_health AS
 SELECT 
     r.collection_timestamp,
     r.vcenter_uuid,
-    r.datacenter_moid,
-    r.cluster_moid,
+    h.datacenter_moid,
+    h.cluster_moid,
     r.host_moid,
     r.config_name AS hostname,
     
@@ -182,8 +182,8 @@ LEFT JOIN
 GROUP BY 
     r.collection_timestamp,
     r.vcenter_uuid,
-    r.datacenter_moid,
-    r.cluster_moid,
+    h.datacenter_moid,
+    h.cluster_moid,
     r.host_moid,
     r.config_name,
     r.connection_state,
