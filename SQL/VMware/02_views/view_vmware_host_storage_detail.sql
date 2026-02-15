@@ -22,7 +22,6 @@ SELECT
     s.datastore_url,
     s.datastore_accessible,
     s.datastore_multiple_host_access,
-    s.datastore_maintenance_mode,
     
     -- Datastore Capacity (Raw bytes)
     s.datastore_capacity AS capacity_bytes,
@@ -53,33 +52,12 @@ SELECT
         ELSE NULL
     END AS free_percent,
     
-    -- Uncommitted Space
-    s.datastore_uncommitted AS uncommitted_bytes,
-    ROUND((s.datastore_uncommitted / (1024.0^3))::numeric, 2) AS uncommitted_gb,
-    ROUND((s.datastore_uncommitted / (1024.0^4))::numeric, 2) AS uncommitted_tb,
-    
-    -- Provisioned Space (Capacity - Free + Uncommitted)
-    (s.datastore_capacity - s.datastore_free_space + s.datastore_uncommitted) AS provisioned_bytes,
-    ROUND(((s.datastore_capacity - s.datastore_free_space + s.datastore_uncommitted) / (1024.0^3))::numeric, 2) AS provisioned_gb,
-    ROUND(((s.datastore_capacity - s.datastore_free_space + s.datastore_uncommitted) / (1024.0^4))::numeric, 2) AS provisioned_tb,
-    
-    -- Thin Provisioning Ratio (Provisioned / Capacity)
-    CASE 
-        WHEN s.datastore_capacity > 0 THEN
-            ROUND((((s.datastore_capacity - s.datastore_free_space + s.datastore_uncommitted)::numeric / s.datastore_capacity))::numeric, 2)
-        ELSE NULL
-    END AS thin_provisioning_ratio,
-    
-    -- Over-provisioned Flag (if provisioned > capacity)
-    CASE 
-        WHEN (s.datastore_capacity - s.datastore_free_space + s.datastore_uncommitted) > s.datastore_capacity THEN true
-        ELSE false
-    END AS is_overprovisioned,
+    -- Note: datastore_uncommitted is not available in raw_vmware_host_storage
+    -- Uncommitted space would come from VM storage info (raw_vmware_vm_storage)
     
     -- Storage Health Status
     CASE 
         WHEN s.datastore_accessible = false THEN 'CRITICAL_INACCESSIBLE'
-        WHEN s.datastore_maintenance_mode = 'inMaintenance' THEN 'MAINTENANCE'
         WHEN s.datastore_capacity > 0 AND ((s.datastore_capacity - s.datastore_free_space)::numeric / s.datastore_capacity * 100) >= 95 THEN 'CRITICAL_FULL'
         WHEN s.datastore_capacity > 0 AND ((s.datastore_capacity - s.datastore_free_space)::numeric / s.datastore_capacity * 100) >= 85 THEN 'WARNING_HIGH'
         WHEN s.datastore_capacity > 0 AND ((s.datastore_capacity - s.datastore_free_space)::numeric / s.datastore_capacity * 100) >= 75 THEN 'WARNING_MEDIUM'
@@ -122,9 +100,6 @@ LEFT JOIN
 -- Example Usage:
 -- Show datastores with low free space:
 -- SELECT datastore_name, hostname, usage_percent, free_gb, storage_health_status FROM vmware_host_storage_detail WHERE storage_health_status LIKE 'CRITICAL%' OR storage_health_status LIKE 'WARNING%';
-
--- Show over-provisioned datastores:
--- SELECT datastore_name, hostname, thin_provisioning_ratio, provisioned_tb, capacity_tb FROM vmware_host_storage_detail WHERE is_overprovisioned = true;
 
 -- Show inaccessible datastores:
 -- SELECT datastore_name, hostname, datastore_accessible, storage_health_status FROM vmware_host_storage_detail WHERE datastore_accessible = false;
