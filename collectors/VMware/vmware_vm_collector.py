@@ -42,7 +42,9 @@ def parse_args():
     parser.add_argument('--perf-window', type=int, default=900,
                         help='Performance window in seconds (default: 900 = 15min)')
     parser.add_argument('--max-workers', type=int, default=32,
-                        help='Max parallel workers for VM processing (default: 32)')
+                        help='Max parallel workers for VM processing (default: 32, same as old performance_metrics)')
+    parser.add_argument('--perf-batch-size', type=int, default=24,
+                        help='Number of entities per QueryPerf API call (default: 24; reduces round-trips)')
     parser.add_argument('--timeout', type=int, default=1800,
                         help='Socket and total collection timeout in seconds (default: 1800 = 30 min). 0 = no timeout')
     parser.add_argument('--max-vms', type=int, default=0,
@@ -305,6 +307,52 @@ def get_counter_info(perf_mgr, counter_id):
     }
 
 
+def build_counter_info_map(perf_mgr, counter_ids):
+    """Build counter_id -> info map once (avoids repeated perf_mgr.perfCounter scans)."""
+    return {cid: get_counter_info(perf_mgr, cid) for cid in counter_ids}
+
+
+def vm_perf_raw_from_query_result(vm_moid, result_item, vcenter_uuid, collection_timestamp,
+                                  counter_info_map, start_time, interval_id):
+    """
+    Build vmware_vm_perf_raw records from one QueryPerf result (batch mode).
+    """
+    perf_raw_records = []
+    if not result_item or not result_item.value:
+        return perf_raw_records
+    for perf_metric in result_item.value:
+        counter_id = perf_metric.id.counterId
+        instance = perf_metric.id.instance or ''
+        counter_info = counter_info_map.get(counter_id) or {
+            'name': f'counter_{counter_id}', 'group': 'unknown', 'name_short': 'unknown',
+            'rollup': 'unknown', 'stats_type': 'unknown', 'unit_key': 'unknown', 'unit_label': ''}
+        if not perf_metric.value:
+            continue
+        interval_seconds = interval_id
+        for i, value in enumerate(perf_metric.value):
+            sample_time = start_time + timedelta(seconds=i * interval_seconds)
+            record = {
+                "data_type": "vmware_vm_perf_raw",
+                "collection_timestamp": collection_timestamp,
+                "vcenter_uuid": vcenter_uuid,
+                "vm_moid": vm_moid,
+                "counter_id": counter_id,
+                "counter_name": counter_info['name'],
+                "counter_group": counter_info['group'],
+                "counter_name_short": counter_info['name_short'],
+                "counter_rollup_type": counter_info['rollup'],
+                "counter_stats_type": counter_info['stats_type'],
+                "counter_unit_key": counter_info['unit_key'],
+                "counter_unit_label": counter_info['unit_label'],
+                "instance": instance,
+                "sample_timestamp": sample_time.isoformat(),
+                "value": value,
+                "interval_id": interval_id,
+            }
+            perf_raw_records.append(serialize_record(record))
+    return perf_raw_records
+
+
 def extract_vm_perf_raw(vm, vcenter_uuid, collection_timestamp, perf_mgr, counter_ids, start_time, end_time, interval_id):
     """
     Extract raw performance samples AS-IS (NO AGGREGATION).
@@ -435,11 +483,22 @@ def calculate_vm_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, 
     return perf_agg_records
 
 
+def process_one_vm_config_only(vm, hierarchy, vcenter_uuid, collection_timestamp):
+    """
+    Extract only config, runtime, storage (no QueryPerf). Used in phase 1 parallel.
+    """
+    records = []
+    records.append(extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy))
+    records.append(extract_vm_runtime(vm, vcenter_uuid, collection_timestamp))
+    records.extend(extract_vm_storage(vm, vcenter_uuid, collection_timestamp))
+    return vm._moId, hierarchy, records
+
+
 def process_one_vm(vm, hierarchy, vcenter_uuid, collection_timestamp, perf_mgr, counter_ids,
                    start_time, end_time, interval_id):
     """
     Process a single VM: extract config, runtime, storage, perf raw, perf agg.
-    Used by ThreadPoolExecutor for parallel collection (same pattern as vmware_vm_performance_metrics).
+    Used when not using batch QueryPerf (fallback).
     """
     records = []
     records.append(extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy))
@@ -500,14 +559,16 @@ def main():
         vcenter_uuid = content.about.instanceUuid
         perf_mgr = content.perfManager
         
-        # Get counter IDs
+        # Get counter IDs and build counter info map once
         counter_ids = []
         for pc in perf_mgr.perfCounter:
             counter_name = f"{pc.groupInfo.key}.{pc.nameInfo.key}.{pc.rollupType}"
             if counter_name in desired_counters:
                 counter_ids.append(pc.key)
-        
-        # Build list of (vm, hierarchy) for parallel processing (same pattern as vmware_vm_performance_metrics)
+        counter_info_map = build_counter_info_map(perf_mgr, counter_ids)
+        metric_ids = [vim.PerformanceManager.MetricId(counterId=cid, instance='*') for cid in counter_ids]
+
+        # Build list of (vm, hierarchy, vcenter_uuid, collection_timestamp) for parallel processing
         jobs = []
         for datacenter in content.rootFolder.childEntity:
             if not hasattr(datacenter, 'hostFolder'):
@@ -527,8 +588,7 @@ def main():
                     for vm in host.vm:
                         if vm.config.template:
                             continue
-                        jobs.append((vm, hierarchy, vcenter_uuid, collection_timestamp, perf_mgr,
-                                     counter_ids, start_time, end_time, args.perf_interval))
+                        jobs.append((vm, hierarchy, vcenter_uuid, collection_timestamp))
                         if args.max_vms > 0 and len(jobs) >= args.max_vms:
                             break
                     if args.max_vms > 0 and len(jobs) >= args.max_vms:
@@ -541,18 +601,61 @@ def main():
         if args.max_vms > 0:
             print(f"Limiting to first {len(jobs)} VMs (--max-vms={args.max_vms})", file=sys.stderr)
 
-        # Process VMs in parallel (with optional total timeout)
+        # Phase 1: Parallel config-only (config, runtime, storage) - no QueryPerf
+        config_results = []
         with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
             futures = [
-                executor.submit(process_one_vm, *job)
+                executor.submit(process_one_vm_config_only, job[0], job[1], job[2], job[3])
                 for job in jobs
             ]
             try:
                 completion = as_completed(futures, timeout=args.timeout if args.timeout > 0 else None)
                 for f in completion:
-                    all_records.extend(f.result())
+                    config_results.append(f.result())
             except FuturesTimeoutError:
-                print("Timeout reached; outputting partial results.", file=sys.stderr)
+                print("Timeout reached in phase 1; outputting partial results.", file=sys.stderr)
+
+        # Phase 2: Batch QueryPerf (N VMs -> ceil(N/perf_batch_size) API calls instead of N)
+        batch_size = max(1, min(args.perf_batch_size, 64))
+        vms = [j[0] for j in jobs]
+        perf_by_vm = {}
+        for i in range(0, len(vms), batch_size):
+            batch = vms[i:i + batch_size]
+            specs = [
+                vim.PerformanceManager.QuerySpec(
+                    entity=vm,
+                    metricId=metric_ids,
+                    startTime=start_time,
+                    endTime=end_time,
+                    intervalId=args.perf_interval
+                )
+                for vm in batch
+            ]
+            try:
+                results = perf_mgr.QueryPerf(querySpec=specs)
+                for j, res in enumerate(results):
+                    if j < len(batch):
+                        vm_moid = batch[j]._moId
+                        perf_raw = vm_perf_raw_from_query_result(
+                            vm_moid, res, vcenter_uuid, collection_timestamp,
+                            counter_info_map, start_time, args.perf_interval
+                        )
+                        perf_agg = calculate_vm_perf_agg(
+                            perf_raw, vcenter_uuid, collection_timestamp,
+                            start_time, end_time
+                        )
+                        perf_by_vm[vm_moid] = (perf_raw, perf_agg)
+            except Exception as e:
+                print(f"Warning: Batch QueryPerf failed for batch at index {i}: {e}", file=sys.stderr)
+                for vm in batch:
+                    perf_by_vm[vm._moId] = ([], [])
+
+        # Merge: for each VM output config records then perf_raw then perf_agg
+        for vm_moid, hierarchy, recs in config_results:
+            all_records.extend(recs)
+            raw_agg = perf_by_vm.get(vm_moid, ([], []))
+            all_records.extend(raw_agg[0])
+            all_records.extend(raw_agg[1])
 
         # Output single JSON array
         print(json.dumps(all_records, default=str, indent=2))
