@@ -1,6 +1,6 @@
--- VMware VM Inventory View
--- Combines config, runtime, and storage data for each VM at each collection timestamp
--- Purpose: Single view for all inventory/configuration data per VM
+-- VMware VM Inventory View (Enhanced with Discovery Integration)
+-- Combines config, runtime, storage data + entity names from discovery tables
+-- Purpose: Complete VM inventory view with human-readable entity names
 
 CREATE OR REPLACE VIEW vmware_vm_inventory AS
 SELECT 
@@ -12,8 +12,17 @@ SELECT
     c.host_moid,
     c.vm_moid,
     
+    -- Entity Names (from discovery tables)
+    vc.name AS vcenter_name,
+    vc.vcenter_hostname,
+    dc.name AS datacenter_name,
+    cl.name AS cluster_name,
+    h.name AS host_name,
+    h.component_uuid AS host_uuid,
+    
     -- Config Data
     c.name AS vm_name,
+    c.folder_path,
     c.template,
     c.vm_path_name,
     c.num_cpu,
@@ -101,6 +110,24 @@ SELECT
 
 FROM 
     raw_vmware_vm_config c
+
+-- Discovery JOINs (entity names)
+LEFT JOIN discovery_vmware_inventory_vcenter vc
+    ON c.vcenter_uuid::text = vc.vcenter_uuid::text
+
+LEFT JOIN discovery_vmware_inventory_datacenter dc
+    ON c.vcenter_uuid::text = dc.vcenter_uuid::text
+    AND c.datacenter_moid = dc.component_moid
+
+LEFT JOIN discovery_vmware_inventory_cluster cl
+    ON c.vcenter_uuid::text = cl.vcenter_uuid::text
+    AND c.cluster_moid = cl.component_moid
+
+LEFT JOIN discovery_vmware_inventory_host h
+    ON c.vcenter_uuid::text = h.vcenter_uuid::text
+    AND c.host_moid = h.component_moid
+
+-- Collector data JOINs
 LEFT JOIN 
     raw_vmware_vm_runtime r 
     ON c.vm_moid = r.vm_moid 
@@ -119,7 +146,14 @@ GROUP BY
     c.cluster_moid,
     c.host_moid,
     c.vm_moid,
+    vc.name,
+    vc.vcenter_hostname,
+    dc.name,
+    cl.name,
+    h.name,
+    h.component_uuid,
     c.name,
+    c.folder_path,
     c.template,
     c.vm_path_name,
     c.num_cpu,
@@ -166,5 +200,12 @@ GROUP BY
     r.quick_stats_uptime_seconds;
 
 -- Example Usage:
--- SELECT * FROM vmware_vm_inventory WHERE vm_name = 'my-vm' ORDER BY collection_timestamp DESC LIMIT 1;
--- SELECT vm_name, power_state, cpu_usage_percent, memory_usage_percent, committed_gb FROM vmware_vm_inventory WHERE power_state = 'poweredOn';
+-- Latest snapshot with entity names:
+-- SELECT * FROM vmware_vm_inventory 
+-- WHERE collection_timestamp = (SELECT MAX(collection_timestamp) FROM raw_vmware_vm_config)
+-- ORDER BY datacenter_name, cluster_name, folder_path, vm_name;
+--
+-- Filter by folder:
+-- SELECT datacenter_name, cluster_name, folder_path, vm_name, power_state, cpu_usage_percent
+-- FROM vmware_vm_inventory 
+-- WHERE folder_path LIKE 'production/%' AND power_state = 'poweredOn';

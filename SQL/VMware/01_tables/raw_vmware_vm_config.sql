@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS raw_vmware_vm_config (
     managed_by_type TEXT,
     version TEXT,
     
+    -- Organizational hierarchy
+    folder_path TEXT,
+    
     -- Constraints
     PRIMARY KEY (vcenter_uuid, vm_moid, collection_timestamp)
 );
@@ -67,9 +70,13 @@ CREATE INDEX IF NOT EXISTS idx_raw_vmware_vm_config_data_type
 CREATE INDEX IF NOT EXISTS idx_raw_vmware_vm_config_name 
     ON raw_vmware_vm_config(name);
 
+CREATE INDEX IF NOT EXISTS idx_raw_vmware_vm_config_folder_path 
+    ON raw_vmware_vm_config(folder_path);
+
 -- Comments
 COMMENT ON TABLE raw_vmware_vm_config IS 'VMware VM configuration data - raw fields from vm.summary.config and vm.config';
 COMMENT ON COLUMN raw_vmware_vm_config.data_type IS 'Always: vmware_vm_config';
 COMMENT ON COLUMN raw_vmware_vm_config.collection_timestamp IS 'Timestamp when script collected this data';
 COMMENT ON COLUMN raw_vmware_vm_config.memory_size_mb IS 'VM memory size in megabytes (AS-IS from VMware API)';
 COMMENT ON COLUMN raw_vmware_vm_config.num_cpu IS 'Number of virtual CPUs (AS-IS from VMware API)';
+COMMENT ON COLUMN raw_vmware_vm_config.folder_path IS 'VM folder path in vCenter hierarchy (e.g., production/web-servers)';

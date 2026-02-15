@@ -1,6 +1,6 @@
--- VMware Host Inventory View
--- Combines hardware, runtime, and storage data for each host at each collection timestamp
--- Purpose: Single view for all inventory/configuration data per host
+-- VMware Host Inventory View (Enhanced with Discovery Integration)
+-- Combines hardware, runtime, storage data + entity names from discovery tables
+-- Purpose: Complete host inventory view with human-readable entity names
 
 CREATE OR REPLACE VIEW vmware_host_inventory AS
 SELECT 
@@ -10,6 +10,13 @@ SELECT
     h.datacenter_moid,
     h.cluster_moid,
     h.host_moid,
+    
+    -- Entity Names (from discovery tables)
+    vc.name AS vcenter_name,
+    vc.vcenter_hostname,
+    dc.name AS datacenter_name,
+    cl.name AS cluster_name,
+    host_disc.name AS host_name,
     
     -- Hardware Info
     h.vendor,
@@ -109,6 +116,24 @@ SELECT
 
 FROM 
     raw_vmware_host_hardware h
+
+-- Discovery JOINs (entity names)
+LEFT JOIN discovery_vmware_inventory_vcenter vc
+    ON h.vcenter_uuid::text = vc.vcenter_uuid::text
+
+LEFT JOIN discovery_vmware_inventory_datacenter dc
+    ON h.vcenter_uuid::text = dc.vcenter_uuid::text
+    AND h.datacenter_moid = dc.component_moid
+
+LEFT JOIN discovery_vmware_inventory_cluster cl
+    ON h.vcenter_uuid::text = cl.vcenter_uuid::text
+    AND h.cluster_moid = cl.component_moid
+
+LEFT JOIN discovery_vmware_inventory_host host_disc
+    ON h.vcenter_uuid::text = host_disc.vcenter_uuid::text
+    AND h.host_moid = host_disc.component_moid
+
+-- Collector data JOINs
 LEFT JOIN 
     raw_vmware_host_runtime r
     ON h.host_moid = r.host_moid 
@@ -126,6 +151,11 @@ GROUP BY
     h.datacenter_moid,
     h.cluster_moid,
     h.host_moid,
+    vc.name,
+    vc.vcenter_hostname,
+    dc.name,
+    cl.name,
+    host_disc.name,
     h.vendor,
     h.model,
     h.uuid,
@@ -157,5 +187,12 @@ GROUP BY
     r.quick_stats_uptime;
 
 -- Example Usage:
--- SELECT * FROM vmware_host_inventory WHERE hostname = 'esxi01.example.com' ORDER BY collection_timestamp DESC LIMIT 1;
--- SELECT hostname, power_state, cpu_usage_percent, memory_usage_percent, storage_usage_percent FROM vmware_host_inventory WHERE power_state = 'poweredOn';
+-- Latest snapshot with entity names:
+-- SELECT * FROM vmware_host_inventory 
+-- WHERE collection_timestamp = (SELECT MAX(collection_timestamp) FROM raw_vmware_host_hardware)
+-- ORDER BY datacenter_name, cluster_name, host_name;
+--
+-- Find hosts with issues:
+-- SELECT datacenter_name, cluster_name, host_name, connection_state, in_maintenance_mode
+-- FROM vmware_host_inventory 
+-- WHERE connection_state != 'connected' OR in_maintenance_mode = TRUE;

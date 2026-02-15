@@ -18,56 +18,109 @@ The collectors follow a **ham veri (raw data)** approach:
 Each entity (VM, Host, Cluster, Datacenter) produces multiple data types:
 
 #### VM (Virtual Machine)
-1. **vmware_vm_config** - Configuration data (vm.summary.config, vm.config)
+
+**Collector data types (time series):**
+1. **vmware_vm_config** - Configuration (vm.summary.config, vm.config, folder path)
 2. **vmware_vm_runtime** - Runtime state (vm.runtime, vm.guest, vm.summary.quickStats)
 3. **vmware_vm_storage** - VM-Datastore relationships (one row per datastore)
 4. **vmware_vm_perf_raw** - Raw performance samples (one row per sample)
 5. **vmware_vm_perf_agg** - Aggregated performance (avg/min/max for optimization)
 
+**Discovery data type (inventory/UPSERT):**
+- **vmware_inventory_vm** - VM identity and hierarchy (name, MOID, parent, status)
+
 #### Host (ESXi)
+
+**Collector data types (time series):**
 1. **vmware_host_hardware** - Hardware configuration (host.hardware, host.summary.hardware)
 2. **vmware_host_runtime** - Runtime state (host.runtime, host.summary.quickStats)
 3. **vmware_host_storage** - Host-Datastore relationships
-4. **vmware_host_perf_raw** - Raw performance samples
+4. **vmware_host_perf_raw** - Raw performance samples (includes power.power.average)
 5. **vmware_host_perf_agg** - Aggregated performance
 
+**Discovery data type (inventory/UPSERT):**
+- **vmware_inventory_host** - Host identity and hierarchy (name, MOID, UUID, model, version)
+
 #### Cluster
-1. **vmware_cluster_config** - Cluster configuration (cluster.configuration, cluster.summary)
+
+**Collector data type (time series):**
+- **vmware_cluster_config** - Cluster configuration (cluster.configuration, cluster.summary)
+
+**Discovery data type (inventory/UPSERT):**
+- **vmware_inventory_cluster** - Cluster identity and hierarchy (name, MOID, parent)
 
 #### Datacenter
+
+**Collector data types (time series):**
 1. **vmware_datacenter_config** - Datacenter configuration (minimal)
-2. **vmware_datacenter_metrics_agg** - Pre-calculated aggregated metrics (optimization table)
+2. **vmware_datacenter_metrics_agg** - Pre-calculated aggregated metrics (optimization)
+
+**Discovery data type (inventory/UPSERT):**
+- **vmware_inventory_datacenter** - Datacenter identity and hierarchy (name, MOID)
 
 ## 📊 Database Tables
 
 ### Table Naming Convention
 
-- **Raw data tables**: `raw_vmware_<entity>_<type>`
-- **Examples**:
-  - `raw_vmware_vm_config`
-  - `raw_vmware_host_hardware`
-  - `raw_vmware_cluster_config`
-  - `raw_vmware_datacenter_metrics_agg`
+- **Collector tables (time series)**: `raw_vmware_<entity>_<type>`
+  - Examples: `raw_vmware_vm_config`, `raw_vmware_host_hardware`
+  - Insert-only, stores metrics with collection_timestamp
+
+- **Discovery tables (inventory/UPSERT)**: `discovery_vmware_inventory_<entity>`
+  - Examples: `discovery_vmware_inventory_vm`, `discovery_vmware_inventory_host`
+  - UPSERT pattern with first_observed/last_observed
+  - Stores entity names and hierarchy (MOID → Name mapping)
 
 ### DDL Files Location
 
-All DDL files are located in: `SQL/VMware/`
+All DDL files are organized in: `SQL/VMware/`
 
 ```
 SQL/VMware/
-├── raw_vmware_vm_config.sql
-├── raw_vmware_vm_runtime.sql
-├── raw_vmware_vm_storage.sql
-├── raw_vmware_vm_perf_raw.sql
-├── raw_vmware_vm_perf_agg.sql
-├── raw_vmware_host_hardware.sql
-├── raw_vmware_host_runtime.sql
-├── raw_vmware_host_storage.sql
-├── raw_vmware_host_perf_raw.sql
-├── raw_vmware_host_perf_agg.sql
-├── raw_vmware_cluster_config.sql
-├── raw_vmware_datacenter_config.sql
-└── raw_vmware_datacenter_metrics_agg.sql
+├── 01_tables/              (Collector raw data tables)
+│   ├── raw_vmware_vm_config.sql
+│   ├── raw_vmware_vm_runtime.sql
+│   ├── raw_vmware_vm_storage.sql
+│   ├── raw_vmware_vm_perf_raw.sql
+│   ├── raw_vmware_vm_perf_agg.sql
+│   ├── raw_vmware_host_hardware.sql
+│   ├── raw_vmware_host_runtime.sql
+│   ├── raw_vmware_host_storage.sql
+│   ├── raw_vmware_host_perf_raw.sql
+│   ├── raw_vmware_host_perf_agg.sql
+│   ├── raw_vmware_cluster_config.sql
+│   ├── raw_vmware_datacenter_config.sql
+│   └── raw_vmware_datacenter_metrics_agg.sql
+│
+├── 02_views/               (Enhanced views with discovery JOIN)
+│   ├── view_vmware_vm_inventory.sql
+│   ├── view_vmware_vm_metrics.sql
+│   ├── view_vmware_host_inventory.sql
+│   ├── view_vmware_host_metrics.sql
+│   ├── view_vmware_host_capacity.sql
+│   ├── view_vmware_host_health.sql
+│   ├── view_vmware_host_power.sql
+│   └── view_vmware_host_storage_detail.sql
+│
+├── 03_materialized_views/  (Latest snapshot views)
+│   ├── mv_vmware_vm_latest.sql
+│   ├── mv_vmware_vm_metrics_latest.sql
+│   ├── mv_vmware_host_latest.sql
+│   ├── mv_vmware_host_metrics_latest.sql
+│   ├── mv_vmware_cluster_latest.sql
+│   └── mv_vmware_datacenter_latest.sql
+│
+└── 04_functions/           (Utility functions)
+    └── fn_refresh_vmware_mvs.sql
+```
+
+**Discovery tables** (UPSERT pattern, located in `SQL/All Tables/`):
+```
+discovery_vmware_inventory_vcenter
+discovery_vmware_inventory_datacenter
+discovery_vmware_inventory_cluster
+discovery_vmware_inventory_host
+discovery_vmware_inventory_vm
 ```
 
 ### Primary Keys
@@ -86,14 +139,14 @@ SQL/VMware/
 
 ## 🔄 Data Flow
 
-### Collection Flow
+### Discovery Flow (Inventory/UPSERT)
 
 ```
 VMware vCenter API
   ↓
-Collector Script (Python)
+Discovery Script (vmware-discovery.py)
   ↓
-JSON Array Output (stdout)
+JSON Array Output (data_type: vmware_inventory_*)
   ↓
 NiFi ExecuteStreamCommand
   ↓
@@ -101,9 +154,46 @@ NiFi SplitJson
   ↓
 NiFi RouteOnAttribute (by data_type)
   ↓
-NiFi PutDatabaseRecord
+NiFi PutDatabaseRecord (UPSERT mode)
   ↓
-PostgreSQL Tables
+discovery_vmware_inventory_* tables
+  (Stores entity names and hierarchy)
+```
+
+### Collector Flow (Metrics/Time Series)
+
+```
+VMware vCenter API
+  ↓
+Collector Script (vmware_*_collector.py)
+  ↓
+JSON Array Output (data_type: vmware_vm_*, vmware_host_*)
+  ↓
+NiFi ExecuteStreamCommand
+  ↓
+NiFi SplitJson
+  ↓
+NiFi RouteOnAttribute (by data_type)
+  ↓
+NiFi PutDatabaseRecord (INSERT mode)
+  ↓
+raw_vmware_* tables
+  (Stores metrics with collection_timestamp)
+```
+
+### Query Flow (Combining Discovery + Collector Data)
+
+```
+discovery_vmware_inventory_*        raw_vmware_*
+(Entity Names, MOID → Name)   +    (Metrics, MOID only)
+              ↓                              ↓
+              └──────────── JOIN ────────────┘
+                             ↓
+                  vmware_*_inventory views
+                  (Complete data with names)
+                             ↓
+                  mv_vmware_*_latest
+                  (Materialized, ultra-fast)
 ```
 
 ### Example Output Structure
@@ -374,6 +464,7 @@ CREATE TABLE raw_vmware_vm_perf_raw_2026_w07
 | Field | VMware API Source | Example Value |
 |-------|-------------------|---------------|
 | `name` | `vm.summary.config.name` | "web-server-01" |
+| `folder_path` | `vm.parent` (hierarchy traversal) | "production/web-servers" |
 | `num_cpu` | `vm.summary.config.numCpu` | 4 |
 | `memory_size_mb` | `vm.summary.config.memorySizeMB` | 8192 |
 | `power_state` | `vm.runtime.powerState` | "poweredOn" |
@@ -382,6 +473,8 @@ CREATE TABLE raw_vmware_vm_perf_raw_2026_w07
 | `quick_stats_guest_memory_usage` | `vm.summary.quickStats.guestMemoryUsage` | 5324 (MB) |
 | `datastore_capacity` | `vm.datastore[].summary.capacity` | 549755813888 (bytes) |
 | `committed` | `vm.summary.storage.committed` | 53687091200 (bytes) |
+
+**Note:** Entity names (datacenter_name, cluster_name, host_name) come from **discovery tables** via JOIN.
 
 **Note:** All values are **AS-IS** from VMware API with no conversion.
 
@@ -409,9 +502,60 @@ Performance metrics come from `perfManager.QueryPerf()`:
 | 143 | disk.read.average | disk | KBps | Disk read rate |
 | 144 | disk.write.average | disk | KBps | Disk write rate |
 | 143 | net.usage.average | net | KBps | Network usage rate |
+| - | power.power.average | power | watts | Power consumption (host only) |
 
 **Raw samples** are stored with original counter values.  
 **Aggregated values** are calculated by the script (avg/min/max).
+
+## 🔗 Discovery Integration
+
+### Discovery Script
+
+**Location:** `collectors/VMware/discovery/vmware-discovery.py`
+
+**Purpose:** Collects VMware infrastructure hierarchy and stores entity names.
+
+**Output:** JSON array with `data_type: vmware_inventory_*`
+
+**Target Tables:** `discovery_vmware_inventory_*` (UPSERT mode)
+
+### Discovery vs Collector Data
+
+| Aspect | Discovery Tables | Collector Tables |
+|--------|------------------|------------------|
+| **Purpose** | Entity names & hierarchy | Metrics & configuration |
+| **Pattern** | UPSERT (update if exists) | INSERT only (time series) |
+| **Fields** | MOID, name, parent, status | MOID, metrics, timestamps |
+| **Update** | last_observed auto-updated | collection_timestamp per row |
+| **Query** | Current state only | Historical time series |
+
+### Combining Discovery + Collector Data
+
+All views in `02_views/` JOIN discovery and collector tables:
+
+```sql
+-- Example: vmware_vm_inventory view
+SELECT 
+    c.vm_moid,                           -- From collector
+    c.num_cpu, c.memory_size_mb,         -- From collector
+    dc.name AS datacenter_name,          -- From discovery (JOIN)
+    cl.name AS cluster_name,             -- From discovery (JOIN)
+    h.name AS host_name                  -- From discovery (JOIN)
+FROM raw_vmware_vm_config c
+LEFT JOIN discovery_vmware_inventory_datacenter dc 
+    ON c.datacenter_moid = dc.component_moid;
+```
+
+### Materialized Views (Latest Snapshot)
+
+For ultra-fast dashboard queries, use materialized views in `03_materialized_views/`:
+
+- `mv_vmware_vm_latest` - Latest VM inventory + metrics
+- `mv_vmware_host_latest` - Latest host inventory + metrics
+- `mv_vmware_cluster_latest` - Latest cluster summary (aggregated)
+- `mv_vmware_datacenter_latest` - Latest datacenter summary (aggregated)
+
+**Refresh:** Every 15 minutes via `refresh_vmware_materialized_views()` function.
 
 ## ⚠️ Important Notes
 
@@ -448,28 +592,15 @@ These are **optimization tables** - the same data can be derived from raw tables
 
 All timestamps are stored as ISO-8601 strings in JSON, converted to `TIMESTAMPTZ` in PostgreSQL.
 
-## 🚀 Migration from Legacy Scripts
+## 🚀 Legacy Scripts
 
-### Comparison
+Legacy collectors have been moved to `deprecated/` folder:
+- `vmware_vm_performance_metrics.py` (plain text output)
+- `vmware_host_performance_metrics.py` (plain text output)
+- `vmware_cluster_performance_metrics.py` (plain text output)
+- `vmware_datacenter_performance_metrics.py` (plain text output)
 
-| Aspect | Legacy Scripts | New Collectors |
-|--------|----------------|----------------|
-| Output Format | Plain text | JSON array |
-| Data Transformation | Multiple conversions | Zero transformation |
-| Tables per Entity | 1 | 5 (VM/Host), 1-2 (Cluster/DC) |
-| NiFi Integration | Complex parsing | RouteOnAttribute |
-| Schema Definition | None | Avro schemas |
-| Performance Data | Aggregated only | Raw + Aggregated |
-| Extensibility | Limited | High (add data_types) |
-
-### Migration Steps
-
-1. **Create new tables** using DDL files in `SQL/VMware/`
-2. **Configure NiFi flows** with new collectors
-3. **Run both old and new** collectors in parallel initially
-4. **Validate data** in new tables
-5. **Switch dashboards** to use new tables
-6. **Deprecate old scripts** after validation period
+**Status:** Deprecated - use new collectors for all deployments.
 
 ## 📚 References
 

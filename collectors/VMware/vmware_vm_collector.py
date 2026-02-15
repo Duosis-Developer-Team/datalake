@@ -77,6 +77,28 @@ def serialize_record(record):
     return record
 
 
+def get_folder_path(vm):
+    """
+    Extract VM folder path by traversing parent hierarchy.
+    Returns folder path (e.g., 'production/web-servers')
+    """
+    try:
+        path_parts = []
+        entity = vm.parent
+        while entity:
+            if isinstance(entity, vim.Folder):
+                # Skip default/root folders
+                if entity.name not in ['vm', 'Datacenters', 'host', 'network', 'datastore']:
+                    path_parts.append(entity.name)
+            elif isinstance(entity, vim.Datacenter):
+                # Stop at datacenter level
+                break
+            entity = getattr(entity, 'parent', None)
+        return '/'.join(reversed(path_parts)) if path_parts else ''
+    except:
+        return ''
+
+
 def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
     """
     Extract VM configuration data AS-IS from VMware API.
@@ -120,6 +142,9 @@ def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
         "managed_by_extension_key": safe_get_attr(vm_config, 'managedBy.extensionKey'),
         "managed_by_type": safe_get_attr(vm_config, 'managedBy.type'),
         "version": safe_get_attr(vm_config, 'version'),
+        
+        # Folder path (organizational hierarchy)
+        "folder_path": get_folder_path(vm),
     }
     return serialize_record(record)
 
@@ -421,7 +446,8 @@ def main():
         'mem.usage.average',
         'disk.read.average',
         'disk.write.average',
-        'net.usage.average'
+        'net.usage.average',
+        'power.power.average'  # Power consumption (usually N/A for VMs)
     ]
     
     try:
