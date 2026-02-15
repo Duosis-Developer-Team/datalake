@@ -9,6 +9,8 @@ SELECT
     -- Add entity names via discovery
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    SPLIT_PART(cl.name, '-', 1) AS location,
     cl.name AS cluster_name,
     h.name AS host_name,
     
@@ -58,6 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_mv_vm_metrics_latest_vcenter
 
 CREATE INDEX IF NOT EXISTS idx_mv_vm_metrics_latest_datacenter 
     ON mv_vmware_vm_metrics_latest(datacenter_name);
+
+CREATE INDEX IF NOT EXISTS idx_mv_vm_metrics_latest_location 
+    ON mv_vmware_vm_metrics_latest(location);
 
 CREATE INDEX IF NOT EXISTS idx_mv_vm_metrics_latest_cluster 
     ON mv_vmware_vm_metrics_latest(cluster_name);

@@ -65,8 +65,22 @@ SQL/VMware/
 
 #### Cluster/Datacenter Tables
 - `raw_vmware_cluster_config` - Cluster configuration
+- `raw_vmware_cluster_metrics_agg` - Pre-aggregated cluster metrics (collector-calculated; for Grafana)
 - `raw_vmware_datacenter_config` - Datacenter configuration
 - `raw_vmware_datacenter_metrics_agg` - Pre-aggregated datacenter metrics
+
+#### ETL Routing by data_type
+
+Collectors output a single JSON array; each record has a `data_type` field. The pipeline must route by `data_type` into the correct table:
+
+| Collector | data_type values | Target table(s) |
+|-----------|------------------|-----------------|
+| vmware_cluster_collector.py | `vmware_cluster_config` | raw_vmware_cluster_config |
+| vmware_cluster_collector.py | `vmware_cluster_metrics_agg` | raw_vmware_cluster_metrics_agg |
+| vmware_datacenter_collector.py | `vmware_datacenter_config` | raw_vmware_datacenter_config |
+| vmware_datacenter_collector.py | `vmware_datacenter_metrics_agg` | raw_vmware_datacenter_metrics_agg |
+
+Insert each record into the table that matches its `data_type` (append-only; use ON CONFLICT if needed per table PK).
 
 ### 3. Enhanced Views (Discovery + Collector)
 
@@ -84,6 +98,8 @@ SQL/VMware/
 | `vmware_host_health` | Host health status | host_runtime + host_hardware |
 | `vmware_host_power` | Host power consumption | host_perf_agg (power counter) |
 | `vmware_host_storage_detail` | Host storage details | host_storage |
+| `vmware_cluster_inventory` | Cluster config with entity names | cluster_config + discovery |
+| `vmware_cluster_metrics` | Cluster aggregated metrics with entity names | cluster_metrics_agg + discovery |
 
 **Key Features:**
 - ✅ Entity names included (datacenter_name, cluster_name, host_name)
@@ -104,6 +120,7 @@ SQL/VMware/
 | `mv_vmware_host_latest` | `vmware_host_inventory` | Every 15 minutes |
 | `mv_vmware_host_metrics_latest` | `vmware_host_metrics` | Every 15 minutes |
 | `mv_vmware_cluster_latest` | Aggregated from hosts | Every 15 minutes |
+| `mv_vmware_cluster_metrics_latest` | `raw_vmware_cluster_metrics_agg` (latest window) | Every 15 minutes |
 | `mv_vmware_datacenter_latest` | Aggregated from clusters/hosts | Every 15 minutes |
 
 **Performance Benefits:**

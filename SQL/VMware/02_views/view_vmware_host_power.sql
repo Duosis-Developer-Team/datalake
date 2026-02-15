@@ -35,6 +35,11 @@ SELECT
     
     -- Host Identification
     r.config_name AS hostname,
+    vc.name AS vcenter_name,
+    dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    SPLIT_PART(cl.name, '-', 1) AS location,
+    cl.name AS cluster_name,
     h.vendor AS hw_vendor,
     h.model AS hw_model,
     
@@ -170,7 +175,15 @@ LEFT JOIN
     raw_vmware_host_runtime r
     ON p.host_moid = r.host_moid 
     AND p.collection_timestamp = r.collection_timestamp
-    AND p.vcenter_uuid = r.vcenter_uuid;
+    AND p.vcenter_uuid = r.vcenter_uuid
+LEFT JOIN discovery_vmware_inventory_vcenter vc
+    ON h.vcenter_uuid::text = vc.vcenter_uuid::text
+LEFT JOIN discovery_vmware_inventory_datacenter dc
+    ON h.vcenter_uuid::text = dc.vcenter_uuid::text
+    AND h.datacenter_moid = dc.component_moid
+LEFT JOIN discovery_vmware_inventory_cluster cl
+    ON h.vcenter_uuid::text = cl.vcenter_uuid::text
+    AND h.cluster_moid = cl.component_moid;
 
 -- Example Usage:
 -- Show hosts with highest power consumption:

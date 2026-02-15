@@ -14,8 +14,9 @@ SELECT
     
     -- Entity Names (from discovery tables)
     vc.name AS vcenter_name,
-    vc.vcenter_hostname,
     dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    SPLIT_PART(cl.name, '-', 1) AS location,
     cl.name AS cluster_name,
     h.name AS host_name,
     h.component_uuid AS host_uuid,

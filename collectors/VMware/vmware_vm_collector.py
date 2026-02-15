@@ -15,9 +15,11 @@ Output: Single JSON array to stdout containing all data_types
 
 import json
 import ssl
+import socket
 import argparse
 import sys
 from datetime import datetime, timezone, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim, vmodl
 
@@ -39,6 +41,12 @@ def parse_args():
                         help='Performance interval in seconds (default: 300)')
     parser.add_argument('--perf-window', type=int, default=900,
                         help='Performance window in seconds (default: 900 = 15min)')
+    parser.add_argument('--max-workers', type=int, default=32,
+                        help='Max parallel workers for VM processing (default: 32)')
+    parser.add_argument('--timeout', type=int, default=1800,
+                        help='Socket and total collection timeout in seconds (default: 1800 = 30 min). 0 = no timeout')
+    parser.add_argument('--max-vms', type=int, default=0,
+                        help='Max VMs to process; 0 = all (default: 0)')
     return parser.parse_args()
 
 
@@ -427,6 +435,29 @@ def calculate_vm_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, 
     return perf_agg_records
 
 
+def process_one_vm(vm, hierarchy, vcenter_uuid, collection_timestamp, perf_mgr, counter_ids,
+                   start_time, end_time, interval_id):
+    """
+    Process a single VM: extract config, runtime, storage, perf raw, perf agg.
+    Used by ThreadPoolExecutor for parallel collection (same pattern as vmware_vm_performance_metrics).
+    """
+    records = []
+    records.append(extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy))
+    records.append(extract_vm_runtime(vm, vcenter_uuid, collection_timestamp))
+    records.extend(extract_vm_storage(vm, vcenter_uuid, collection_timestamp))
+    perf_raw = extract_vm_perf_raw(
+        vm, vcenter_uuid, collection_timestamp, perf_mgr,
+        counter_ids, start_time, end_time, interval_id
+    )
+    records.extend(perf_raw)
+    perf_agg = calculate_vm_perf_agg(
+        perf_raw, vcenter_uuid, collection_timestamp,
+        start_time, end_time
+    )
+    records.extend(perf_agg)
+    return records
+
+
 def main():
     """Main execution."""
     args = parse_args()
@@ -451,6 +482,10 @@ def main():
     ]
     
     try:
+        # Apply socket timeout so connect and API calls do not hang indefinitely
+        if args.timeout > 0:
+            socket.setdefaulttimeout(args.timeout)
+
         # Connect to vCenter
         context = ssl._create_unverified_context()
         si = SmartConnect(
@@ -472,19 +507,16 @@ def main():
             if counter_name in desired_counters:
                 counter_ids.append(pc.key)
         
-        # Iterate through datacenter hierarchy
+        # Build list of (vm, hierarchy) for parallel processing (same pattern as vmware_vm_performance_metrics)
+        jobs = []
         for datacenter in content.rootFolder.childEntity:
             if not hasattr(datacenter, 'hostFolder'):
                 continue
-            
             datacenter_moid = datacenter._moId
-            
             for entity in datacenter.hostFolder.childEntity:
                 if not isinstance(entity, vim.ClusterComputeResource):
                     continue
-                
                 cluster_moid = entity._moId
-                
                 for host in entity.host:
                     host_moid = host._moId
                     hierarchy = {
@@ -492,31 +524,36 @@ def main():
                         'cluster': cluster_moid,
                         'host': host_moid
                     }
-                    
                     for vm in host.vm:
-                        # Skip templates
                         if vm.config.template:
                             continue
-                        
-                        # Extract all data types for this VM
-                        all_records.append(extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy))
-                        all_records.append(extract_vm_runtime(vm, vcenter_uuid, collection_timestamp))
-                        all_records.extend(extract_vm_storage(vm, vcenter_uuid, collection_timestamp))
-                        
-                        # Extract performance data
-                        perf_raw = extract_vm_perf_raw(
-                            vm, vcenter_uuid, collection_timestamp, perf_mgr,
-                            counter_ids, start_time, end_time, args.perf_interval
-                        )
-                        all_records.extend(perf_raw)
-                        
-                        # Calculate aggregates
-                        perf_agg = calculate_vm_perf_agg(
-                            perf_raw, vcenter_uuid, collection_timestamp,
-                            start_time, end_time
-                        )
-                        all_records.extend(perf_agg)
-        
+                        jobs.append((vm, hierarchy, vcenter_uuid, collection_timestamp, perf_mgr,
+                                     counter_ids, start_time, end_time, args.perf_interval))
+                        if args.max_vms > 0 and len(jobs) >= args.max_vms:
+                            break
+                    if args.max_vms > 0 and len(jobs) >= args.max_vms:
+                        break
+                if args.max_vms > 0 and len(jobs) >= args.max_vms:
+                    break
+            if args.max_vms > 0 and len(jobs) >= args.max_vms:
+                break
+
+        if args.max_vms > 0:
+            print(f"Limiting to first {len(jobs)} VMs (--max-vms={args.max_vms})", file=sys.stderr)
+
+        # Process VMs in parallel (with optional total timeout)
+        with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+            futures = [
+                executor.submit(process_one_vm, *job)
+                for job in jobs
+            ]
+            try:
+                completion = as_completed(futures, timeout=args.timeout if args.timeout > 0 else None)
+                for f in completion:
+                    all_records.extend(f.result())
+            except FuturesTimeoutError:
+                print("Timeout reached; outputting partial results.", file=sys.stderr)
+
         # Output single JSON array
         print(json.dumps(all_records, default=str, indent=2))
     

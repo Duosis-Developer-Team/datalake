@@ -11,6 +11,13 @@ SELECT
     r.host_moid,
     r.config_name AS hostname,
     
+    -- Entity Names (from discovery)
+    vc.name AS vcenter_name,
+    dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    SPLIT_PART(cl.name, '-', 1) AS location,
+    cl.name AS cluster_name,
+    
     -- Connection & Power Status
     r.connection_state,
     r.power_state,
@@ -168,6 +175,14 @@ LEFT JOIN
     ON r.host_moid = h.host_moid 
     AND r.collection_timestamp = h.collection_timestamp
     AND r.vcenter_uuid = h.vcenter_uuid
+LEFT JOIN discovery_vmware_inventory_vcenter vc
+    ON h.vcenter_uuid::text = vc.vcenter_uuid::text
+LEFT JOIN discovery_vmware_inventory_datacenter dc
+    ON h.vcenter_uuid::text = dc.vcenter_uuid::text
+    AND h.datacenter_moid = dc.component_moid
+LEFT JOIN discovery_vmware_inventory_cluster cl
+    ON h.vcenter_uuid::text = cl.vcenter_uuid::text
+    AND h.cluster_moid = cl.component_moid
 LEFT JOIN 
     raw_vmware_host_storage s
     ON r.host_moid = s.host_moid 
@@ -186,6 +201,10 @@ GROUP BY
     h.cluster_moid,
     r.host_moid,
     r.config_name,
+    vc.vcenter_hostname,
+    vc.name,
+    cl.name,
+    dc.name,
     r.connection_state,
     r.power_state,
     r.standby_mode,

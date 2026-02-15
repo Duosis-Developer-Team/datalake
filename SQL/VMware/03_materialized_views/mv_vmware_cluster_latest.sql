@@ -10,6 +10,8 @@ SELECT
     -- Entity Names
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    SPLIT_PART(cl.name, '-', 1) AS location,
     cl.name AS cluster_name,
     
     -- Cluster Status
@@ -89,6 +91,7 @@ LEFT JOIN raw_vmware_host_runtime rt
 GROUP BY 
     cl.vcenter_uuid,
     cl.component_moid,
+    vc.vcenter_hostname,
     vc.name,
     dc.name,
     cl.name,
@@ -106,6 +109,9 @@ CREATE INDEX IF NOT EXISTS idx_mv_cluster_latest_vcenter
 
 CREATE INDEX IF NOT EXISTS idx_mv_cluster_latest_datacenter 
     ON mv_vmware_cluster_latest(datacenter_name);
+
+CREATE INDEX IF NOT EXISTS idx_mv_cluster_latest_location 
+    ON mv_vmware_cluster_latest(location);
 
 CREATE INDEX IF NOT EXISTS idx_mv_cluster_latest_name 
     ON mv_vmware_cluster_latest(cluster_name);

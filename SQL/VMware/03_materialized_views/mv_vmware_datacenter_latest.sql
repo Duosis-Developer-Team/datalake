@@ -10,6 +10,8 @@ SELECT
     -- Entity Names
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
+    vc.vcenter_hostname AS vcenter_hostname,
+    array_agg(DISTINCT SPLIT_PART(cl.name, '-', 1)) FILTER (WHERE cl.name IS NOT NULL) AS locations,
     
     -- Datacenter Status
     dc.status AS datacenter_status,
@@ -84,6 +86,7 @@ LEFT JOIN raw_vmware_host_runtime rt
 GROUP BY 
     dc.vcenter_uuid,
     dc.component_moid,
+    vc.vcenter_hostname,
     vc.name,
     dc.name,
     dc.status,
