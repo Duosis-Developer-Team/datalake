@@ -93,8 +93,10 @@ def process_vm(dc_name, cluster_name, host_name, host_uuid, vm, perf_mgr, cmap, 
     # VM and host details
     num_cpus = vm.summary.config.numCpu
     esxi_system_uuid = host_uuid
-    total_cpu_capacity_mhz = 0
-    total_mem_capacity_gb = 0.0
+    total_cpu_capacity_mhz = 0  # VM-level total CPU capacity would require host CPU info
+    # Total memory from VM config (memorySizeMB); convert to GB
+    memory_size_mb = getattr(vm.summary.config, 'memorySizeMB', 0) or 0
+    total_mem_capacity_gb = memory_size_mb / 1024.0
 
     vm_name = vm.summary.config.name
     power_state = vm.runtime.powerState
