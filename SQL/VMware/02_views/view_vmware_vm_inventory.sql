@@ -16,8 +16,8 @@ SELECT
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
     vc.vcenter_hostname AS vcenter_hostname,
-    SPLIT_PART(cl.name, '-', 1) AS location,
-    cl.name AS cluster_name,
+    COALESCE(SPLIT_PART(cl.name, '-', 1), SPLIT_PART(cluster_cfg.name, '-', 1)) AS location,
+    COALESCE(cl.name, cluster_cfg.name) AS cluster_name,
     h.name AS host_name,
     h.component_uuid AS host_uuid,
     
@@ -123,6 +123,13 @@ LEFT JOIN discovery_vmware_inventory_datacenter dc
 LEFT JOIN discovery_vmware_inventory_cluster cl
     ON c.vcenter_uuid::text = cl.vcenter_uuid::text
     AND c.cluster_moid = cl.component_moid
+LEFT JOIN (
+    SELECT DISTINCT ON (vcenter_uuid, cluster_moid) vcenter_uuid, cluster_moid, name
+    FROM raw_vmware_cluster_config
+    ORDER BY vcenter_uuid, cluster_moid, collection_timestamp DESC
+) cluster_cfg
+    ON c.vcenter_uuid::text = cluster_cfg.vcenter_uuid
+    AND c.cluster_moid = cluster_cfg.cluster_moid
 
 LEFT JOIN discovery_vmware_inventory_host h
     ON c.vcenter_uuid::text = h.vcenter_uuid::text
@@ -151,6 +158,7 @@ GROUP BY
     vc.vcenter_hostname,
     dc.name,
     cl.name,
+    cluster_cfg.name,
     h.name,
     h.component_uuid,
     c.name,

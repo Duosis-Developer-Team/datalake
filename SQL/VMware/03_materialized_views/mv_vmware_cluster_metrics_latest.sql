@@ -13,8 +13,8 @@ SELECT
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
     vc.vcenter_hostname AS vcenter_hostname,
-    SPLIT_PART(cl.name, '-', 1) AS location,
-    cl.name AS cluster_name_discovery,
+    COALESCE(SPLIT_PART(cl.name, '-', 1), SPLIT_PART(m.cluster_name, '-', 1)) AS location,
+    COALESCE(cl.name, m.cluster_name) AS cluster_name_discovery,
 
     m.window_start,
     m.window_end,

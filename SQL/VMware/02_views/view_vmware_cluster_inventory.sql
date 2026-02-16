@@ -14,8 +14,8 @@ SELECT
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
     vc.vcenter_hostname AS vcenter_hostname,
-    SPLIT_PART(cl.name, '-', 1) AS location,
-    cl.name AS cluster_name,
+    COALESCE(SPLIT_PART(cl.name, '-', 1), SPLIT_PART(c.name, '-', 1)) AS location,
+    COALESCE(cl.name, c.name) AS cluster_name,
 
     -- Config (from raw_vmware_cluster_config)
     c.name AS name,

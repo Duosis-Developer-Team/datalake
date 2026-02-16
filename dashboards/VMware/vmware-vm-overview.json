@@ -1,0 +1,254 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRES",
+      "label": "PostgreSQL",
+      "description": "Datalake PostgreSQL datasource",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "postgres", "name": "PostgreSQL", "version": "1.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT COUNT(*) AS \"VMs\" FROM mv_vmware_vm_latest WHERE 1=1\nAND ('$vm' = '' OR vm_name IN ($vm))",
+          "format": "table"
+        }
+      ],
+      "title": "Total VMs",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT COUNT(*) AS \"Powered On\" FROM mv_vmware_vm_latest WHERE power_state = 'poweredOn'\nAND ('$vm' = '' OR vm_name IN ($vm))",
+          "format": "table"
+        }
+      ],
+      "title": "Powered On",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 3 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT m.collection_timestamp AS time, c.name AS metric, m.cpu_usage_avg_mhz AS \"CPU (MHz)\"\nFROM vmware_vm_metrics m\nJOIN raw_vmware_vm_config c ON m.vcenter_uuid = c.vcenter_uuid AND m.vm_moid = c.vm_moid AND m.collection_timestamp = c.collection_timestamp\nWHERE m.collection_timestamp BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('$vm' = '' OR c.name IN ($vm))\nORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "title": "CPU usage (MHz) - time series",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 3 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT m.collection_timestamp AS time, c.name AS metric, m.mem_usage_avg_percent AS \"Memory %\"\nFROM vmware_vm_metrics m\nJOIN raw_vmware_vm_config c ON m.vcenter_uuid = c.vcenter_uuid AND m.vm_moid = c.vm_moid AND m.collection_timestamp = c.collection_timestamp\nWHERE m.collection_timestamp BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('$vm' = '' OR c.name IN ($vm))\nORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "title": "Memory usage % - time series",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT m.collection_timestamp AS time, c.name AS metric, m.cpu_ready_avg_ms AS \"CPU ready (ms)\"\nFROM vmware_vm_metrics m\nJOIN raw_vmware_vm_config c ON m.vcenter_uuid = c.vcenter_uuid AND m.vm_moid = c.vm_moid AND m.collection_timestamp = c.collection_timestamp\nWHERE m.collection_timestamp BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('$vm' = '' OR c.name IN ($vm))\nORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "title": "CPU ready (ms) - time series",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+      "id": 6,
+      "fieldConfig": { "defaults": { "max": 100, "min": 0, "unit": "percent" }, "overrides": [] },
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT vm_name AS vm_name, COALESCE(mem_usage_avg_percent, 0) AS \"Memory %\"\nFROM mv_vmware_vm_metrics_latest\nWHERE ('$vm' = '' OR vm_name IN ($vm))\nORDER BY \"Memory %\" DESC NULLS LAST\nLIMIT 20",
+          "format": "table"
+        }
+      ],
+      "title": "Top VMs by Memory % (current)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 27 },
+      "id": 7,
+      "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT vm_name AS \"VM\", cluster_name AS \"Cluster\", host_name AS \"Host\",\n  cpu_usage_avg_mhz AS \"CPU (MHz)\", mem_usage_avg_percent AS \"Mem %\", disk_usage_avg_kbps AS \"Disk (KBps)\", net_usage_avg_kbps AS \"Net (KBps)\"\nFROM mv_vmware_vm_metrics_latest\nWHERE ('$vm' = '' OR vm_name IN ($vm))\nORDER BY cpu_usage_avg_mhz DESC NULLS LAST\nLIMIT 50",
+          "format": "table"
+        }
+      ],
+      "title": "Top VMs by CPU (current)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 37 },
+      "id": 8,
+      "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+          "editorMode": "code",
+          "rawSql": "SELECT vcenter_name AS \"vCenter\", datacenter_name AS \"Datacenter\", cluster_name AS \"Cluster\", host_name AS \"Host\",\n  vm_name AS \"VM\", power_state AS \"Power\", num_cpu AS \"vCPU\", memory_size_mb AS \"Mem (MB)\",\n  current_cpu_mhz AS \"CPU (MHz)\", current_guest_memory_mb AS \"Guest Mem (MB)\"\nFROM mv_vmware_vm_latest\nWHERE ('$vm' = '' OR vm_name IN ($vm))\nORDER BY vcenter_name, datacenter_name, cluster_name, host_name, vm_name",
+          "format": "table"
+        }
+      ],
+      "title": "VM list - power state and capacity",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["vmware", "vm", "datalake"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "vCenter",
+        "multi": true,
+        "name": "vcenter",
+        "options": [],
+        "query": "SELECT name FROM discovery_vmware_inventory_vcenter ORDER BY name",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Datacenter",
+        "multi": true,
+        "name": "datacenter",
+        "options": [],
+        "query": "SELECT DISTINCT dc.name FROM discovery_vmware_inventory_datacenter dc\nJOIN discovery_vmware_inventory_vcenter vc ON dc.vcenter_uuid::text = vc.vcenter_uuid::text\nWHERE '$vcenter' = '' OR vc.name IN ($vcenter)\nORDER BY 1",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Location",
+        "multi": true,
+        "name": "location",
+        "options": [],
+        "query": "SELECT DISTINCT SPLIT_PART(cl.name, '-', 1) FROM discovery_vmware_inventory_cluster cl\nJOIN discovery_vmware_inventory_vcenter vc ON cl.vcenter_uuid::text = vc.vcenter_uuid::text\nJOIN discovery_vmware_inventory_datacenter dc ON cl.vcenter_uuid::text = dc.vcenter_uuid::text AND cl.parent_component_moid = dc.component_moid\nWHERE ('$vcenter' = '' OR vc.name IN ($vcenter)) AND ('$datacenter' = '' OR dc.name IN ($datacenter))\nORDER BY 1",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": "SELECT DISTINCT cl.name FROM discovery_vmware_inventory_cluster cl\nJOIN discovery_vmware_inventory_vcenter vc ON cl.vcenter_uuid::text = vc.vcenter_uuid::text\nJOIN discovery_vmware_inventory_datacenter dc ON cl.vcenter_uuid::text = dc.vcenter_uuid::text AND cl.parent_component_moid = dc.component_moid\nWHERE ('$vcenter' = '' OR vc.name IN ($vcenter)) AND ('$datacenter' = '' OR dc.name IN ($datacenter))\nAND ('$location' = '' OR SPLIT_PART(cl.name, '-', 1) IN ($location))\nORDER BY 1",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Host",
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": "SELECT DISTINCT h.name FROM discovery_vmware_inventory_host h\nJOIN discovery_vmware_inventory_vcenter vc ON h.vcenter_uuid::text = vc.vcenter_uuid::text\nJOIN discovery_vmware_inventory_cluster cl ON h.vcenter_uuid::text = cl.vcenter_uuid::text AND h.parent_component_moid = cl.component_moid\nJOIN discovery_vmware_inventory_datacenter dc ON cl.vcenter_uuid::text = dc.vcenter_uuid::text AND cl.parent_component_moid = dc.component_moid\nWHERE ('$vcenter' = '' OR vc.name IN ($vcenter)) AND ('$datacenter' = '' OR dc.name IN ($datacenter))\nAND ('$cluster' = '' OR cl.name IN ($cluster))\nORDER BY 1",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "VM",
+        "multi": true,
+        "name": "vm",
+        "options": [],
+        "query": "SELECT DISTINCT inv.vm_name FROM mv_vmware_vm_latest inv\nWHERE ('$vcenter' = '' OR inv.vcenter_name IN ($vcenter))\nAND ('$datacenter' = '' OR inv.datacenter_name IN ($datacenter))\nAND ('$cluster' = '' OR inv.cluster_name IN ($cluster))\nAND ('$host' = '' OR inv.host_name IN ($host))\nORDER BY 1",
+        "refresh": 1,
+        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "type": "query",
+        "multiValueFormat": "singlequote"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "VMware - VM Overview",
+  "uid": "vmware-vm-overview",
+  "version": 1,
+  "weekStart": ""
+}

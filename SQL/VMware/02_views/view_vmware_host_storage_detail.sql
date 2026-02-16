@@ -14,8 +14,8 @@ SELECT
     vc.name AS vcenter_name,
     dc.name AS datacenter_name,
     vc.vcenter_hostname AS vcenter_hostname,
-    SPLIT_PART(cl.name, '-', 1) AS location,
-    cl.name AS cluster_name,
+    COALESCE(SPLIT_PART(cl.name, '-', 1), SPLIT_PART(cluster_cfg.name, '-', 1)) AS location,
+    COALESCE(cl.name, cluster_cfg.name) AS cluster_name,
     
     -- Host Info
     r.config_name AS hostname,
@@ -110,7 +110,14 @@ LEFT JOIN discovery_vmware_inventory_datacenter dc
     AND h.datacenter_moid = dc.component_moid
 LEFT JOIN discovery_vmware_inventory_cluster cl
     ON h.vcenter_uuid::text = cl.vcenter_uuid::text
-    AND h.cluster_moid = cl.component_moid;
+    AND h.cluster_moid = cl.component_moid
+LEFT JOIN (
+    SELECT DISTINCT ON (vcenter_uuid, cluster_moid) vcenter_uuid, cluster_moid, name
+    FROM raw_vmware_cluster_config
+    ORDER BY vcenter_uuid, cluster_moid, collection_timestamp DESC
+) cluster_cfg
+    ON h.vcenter_uuid::text = cluster_cfg.vcenter_uuid
+    AND h.cluster_moid = cluster_cfg.cluster_moid;
 
 -- Example Usage:
 -- Show datastores with low free space:
