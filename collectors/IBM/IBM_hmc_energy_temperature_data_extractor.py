@@ -1,14 +1,120 @@
 from IBM_hmc_Stats_Processor import HMC
 import json
+import os
+import sys
 
-# Bağlantı bilgileri
-CREDENTIALS = {
-    "hmc_hostname": "10.34.2.110",
-    "user": "zabbix",
-    "passwd": "2u4Mzf7RJC",
-}
 
 OUTPUT_JSON_FILE = "energy_stats.json"  # JSON dosya adı
+
+
+def get_config_paths(config_path=None):
+    """
+    configuration_file.json icin kullanilacak yolu uretir.
+    Termius ve sunucu kullaniminda ana beklenen konum /Datalake_Project/configuration_file.json.
+    """
+    if config_path:
+        return [os.path.abspath(config_path)]
+
+    return ["/Datalake_Project/configuration_file.json"]
+
+
+def load_hmc_credentials(config_path=None):
+    """
+    IBM-HMC baglanti bilgilerini configuration_file.json dosyasindan okur.
+    """
+    errors = []
+
+    for path in get_config_paths(config_path):
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                config_text = file.read()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            errors.append(f"{path}: {exc}")
+            continue
+
+        try:
+            hmc_config = extract_json_object_for_key(config_text, "IBM-HMC")
+        except ValueError as exc:
+            errors.append(f"{path}: {exc}")
+            continue
+
+        credentials = {
+            "hmc_hostname": hmc_config.get("hmc_hostname"),
+            "user": hmc_config.get("hmc_user") or hmc_config.get("user"),
+            "passwd": hmc_config.get("hmc_password") or hmc_config.get("passwd") or hmc_config.get("password"),
+        }
+
+        missing_fields = [
+            field for field, value in credentials.items() if not value
+        ]
+        if missing_fields:
+            errors.append(
+                f"{path}: missing IBM-HMC values for {', '.join(missing_fields)}"
+            )
+            continue
+
+        return credentials, path
+
+    error_message = "Configuration file could not be loaded."
+    if errors:
+        error_message = f"{error_message} Checked paths: {'; '.join(errors)}"
+
+    raise RuntimeError(error_message)
+
+
+def extract_json_object_for_key(config_text, section_name):
+    """
+    Gecerli olmayan genel JSON icinden ilgili bolumu ayiklayip parse eder.
+    Bu sayede configuration_file.json icinde alakasiz bir bolum bozuk olsa bile
+    IBM-HMC ayarlari okunabilir.
+    """
+    section_marker = f'"{section_name}"'
+    section_start = config_text.find(section_marker)
+    if section_start == -1:
+        raise ValueError(f"'{section_name}' section not found")
+
+    object_start = config_text.find("{", section_start)
+    if object_start == -1:
+        raise ValueError(f"'{section_name}' section does not contain an object")
+
+    brace_depth = 0
+    in_string = False
+    escape_next = False
+
+    for index in range(object_start, len(config_text)):
+        char = config_text[index]
+
+        if escape_next:
+            escape_next = False
+            continue
+
+        if char == "\\" and in_string:
+            escape_next = True
+            continue
+
+        if char == '"':
+            in_string = not in_string
+            continue
+
+        if in_string:
+            continue
+
+        if char == "{":
+            brace_depth += 1
+        elif char == "}":
+            brace_depth -= 1
+            if brace_depth == 0:
+                try:
+                    return json.loads(config_text[object_start:index + 1])
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"'{section_name}' section is not valid JSON ({exc})"
+                    ) from exc
+
+    raise ValueError(f"'{section_name}' section is not closed properly")
+
 
 def save_all_to_json(data, output_file):
     """
@@ -90,6 +196,15 @@ def get_server_power_and_temperature(hmc_hostname, username, password):
 
 
 if __name__ == "__main__":
-    get_server_power_and_temperature(
-        CREDENTIALS["hmc_hostname"], CREDENTIALS["user"], CREDENTIALS["passwd"]
-    )
+    try:
+        config_file = sys.argv[1] if len(sys.argv) > 1 else None
+        credentials, loaded_config_path = load_hmc_credentials(config_file)
+        print(f"IBM-HMC configuration loaded from: {loaded_config_path}")
+        get_server_power_and_temperature(
+            credentials["hmc_hostname"],
+            credentials["user"],
+            credentials["passwd"],
+        )
+    except Exception as exc:
+        print(f"Error loading IBM-HMC configuration: {exc}")
+        sys.exit(1)
