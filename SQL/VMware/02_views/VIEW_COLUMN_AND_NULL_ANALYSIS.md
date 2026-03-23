@@ -245,6 +245,45 @@ No other tables; NULL means that performance counter was not collected or has no
 
 ---
 
+### 3.11 vmware_datacenter_inventory
+
+**Main source:** `raw_vmware_datacenter_config c` (FROM).  
+**LEFT JOINs:** discovery (vc, dc).
+
+**Column sources:**
+- Identification and config: from raw_vmware_datacenter_config (collection_timestamp, vcenter_uuid, datacenter_moid, name, overall_status, data_type).
+- Entity names (vcenter_name, datacenter_name, vcenter_hostname): from discovery via LEFT JOIN.
+
+**Columns that can be NULL:**
+
+| Column(s) | Reason |
+|-----------|--------|
+| vcenter_name, datacenter_name, vcenter_hostname | Discovery LEFT JOIN: no match. |
+| name, overall_status | Nullable in raw_vmware_datacenter_config. |
+
+---
+
+### 3.12 vmware_datacenter_metrics
+
+**Main source:** `raw_vmware_datacenter_metrics_agg m` (FROM).  
+**LEFT JOINs:** discovery (vc, dc).
+
+**Column sources:**
+- All metric and count columns: from raw_vmware_datacenter_metrics_agg (collector-calculated aggregations).
+- Entity names (vcenter_name, datacenter_name, vcenter_hostname): from discovery via LEFT JOIN.
+- total_cpu_ghz, total_memory_gb: ROUND on total_cpu_mhz_capacity and total_memory_bytes_capacity.
+
+**Columns that can be NULL:**
+
+| Column(s) | Reason |
+|-----------|--------|
+| vcenter_name, datacenter_name, vcenter_hostname | Discovery LEFT JOIN: no match. |
+| datacenter_moid, datacenter_name_raw, window_*, total_*_count | Nullable in raw table or collector. |
+| cpu_usage_*_percent, memory_usage_*_percent, disk_*_kbps, network_*_kbps | No host perf data for that datacenter in that window → collector leaves NULL. |
+| total_cpu_ghz, total_memory_gb | total_cpu_mhz_capacity or total_memory_bytes_capacity NULL or zero. |
+
+---
+
 ## 4. Summary
 
 - **All view columns** are backed by real tables (raw_*, discovery_*) or deterministic expressions on them.

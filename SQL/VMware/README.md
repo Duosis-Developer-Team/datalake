@@ -100,6 +100,8 @@ Insert each record into the table that matches its `data_type` (append-only; use
 | `vmware_host_storage_detail` | Host storage details | host_storage |
 | `vmware_cluster_inventory` | Cluster config with entity names | cluster_config + discovery |
 | `vmware_cluster_metrics` | Cluster aggregated metrics with entity names | cluster_metrics_agg + discovery |
+| `vmware_datacenter_inventory` | Datacenter config with entity names | datacenter_config + discovery |
+| `vmware_datacenter_metrics` | Datacenter aggregated metrics with entity names | datacenter_metrics_agg + discovery |
 
 **Key Features:**
 - ✅ Entity names included (datacenter_name, cluster_name, host_name)
@@ -122,6 +124,7 @@ Insert each record into the table that matches its `data_type` (append-only; use
 | `mv_vmware_cluster_latest` | Aggregated from hosts | Every 15 minutes |
 | `mv_vmware_cluster_metrics_latest` | `raw_vmware_cluster_metrics_agg` (latest window) | Every 15 minutes |
 | `mv_vmware_datacenter_latest` | Aggregated from clusters/hosts | Every 15 minutes |
+| `mv_vmware_datacenter_metrics_latest` | `raw_vmware_datacenter_metrics_agg` (latest window) | Every 15 minutes |
 
 **Performance Benefits:**
 - 50-400x faster than regular views

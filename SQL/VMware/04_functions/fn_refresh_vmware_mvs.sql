@@ -19,7 +19,8 @@ DECLARE
         'mv_vmware_host_metrics_latest',
         'mv_vmware_cluster_latest',
         'mv_vmware_cluster_metrics_latest',
-        'mv_vmware_datacenter_latest'
+        'mv_vmware_datacenter_latest',
+        'mv_vmware_datacenter_metrics_latest'
     ];
     v TEXT;
 BEGIN

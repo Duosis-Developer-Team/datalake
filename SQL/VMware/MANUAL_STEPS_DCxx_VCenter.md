@@ -22,6 +22,8 @@ psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_host_storage_det
 psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_host_power.sql
 psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_cluster_inventory.sql
 psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_cluster_metrics.sql
+psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_datacenter_inventory.sql
+psql -U <user> -d <database> -f SQL/VMware/02_views/view_vmware_datacenter_metrics.sql
 ```
 
 Veya tek seferde:
@@ -47,6 +49,7 @@ DROP MATERIALIZED VIEW IF EXISTS mv_vmware_host_metrics_latest;
 DROP MATERIALIZED VIEW IF EXISTS mv_vmware_cluster_latest;
 DROP MATERIALIZED VIEW IF EXISTS mv_vmware_cluster_metrics_latest;
 DROP MATERIALIZED VIEW IF EXISTS mv_vmware_datacenter_latest;
+DROP MATERIALIZED VIEW IF EXISTS mv_vmware_datacenter_metrics_latest;
 DROP MATERIALIZED VIEW IF EXISTS mv_vmware_vm_latest;
 DROP MATERIALIZED VIEW IF EXISTS mv_vmware_host_latest;
 ```
@@ -67,6 +70,7 @@ Kolon listesi **içinde** değişen MV'lar:
 - `mv_vmware_cluster_latest`
 - `mv_vmware_cluster_metrics_latest`
 - `mv_vmware_datacenter_latest`
+- `mv_vmware_datacenter_metrics_latest`
 - `mv_vmware_vm_metrics_latest`
 - `mv_vmware_host_metrics_latest`
 
