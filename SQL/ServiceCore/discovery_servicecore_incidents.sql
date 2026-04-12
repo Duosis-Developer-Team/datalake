@@ -19,6 +19,17 @@ CREATE TABLE IF NOT EXISTS public.discovery_servicecore_incidents (
     agent_id                  BIGINT,
     agent_group_id            BIGINT,
     agent_group_name          TEXT,
+    agent_full_name           TEXT,
+
+    org_user_support_account_name TEXT,
+    org_user_support_account_id   BIGINT,
+    sla_policy_name           TEXT,
+    company_name              TEXT,
+    times_reopen              BIGINT,
+
+    is_active                 BOOLEAN,
+    is_deleted                BOOLEAN,
+    is_merged                 BOOLEAN,
 
     created_date              TIMESTAMPTZ,
     last_updated_date         TIMESTAMPTZ,
@@ -50,3 +61,26 @@ CREATE INDEX IF NOT EXISTS idx_discovery_servicecore_incidents_org_user_id
 
 CREATE INDEX IF NOT EXISTS idx_discovery_servicecore_incidents_created_date
     ON public.discovery_servicecore_incidents (created_date);
+
+CREATE INDEX IF NOT EXISTS idx_discovery_servicecore_incidents_org_user_support_account_id
+    ON public.discovery_servicecore_incidents (org_user_support_account_id);
+
+COMMENT ON TABLE public.discovery_servicecore_incidents IS
+    'ServiceCore ITSM incident tickets (Silver). One row per ticket_id; UPSERT from collector data_type=servicecore_inventory_incident. JSON keys match servicecore-discovery.json incident subset; omitted keys are null.';
+
+COMMENT ON COLUMN public.discovery_servicecore_incidents.ticket_id IS 'Primary key; maps to JSON ticket_id.';
+COMMENT ON COLUMN public.discovery_servicecore_incidents.data_type IS 'Always servicecore_inventory_incident for this table.';
+COMMENT ON COLUMN public.discovery_servicecore_incidents.org_user_support_account_name IS 'Tenant / support account label for customer linkage.';
+COMMENT ON COLUMN public.discovery_servicecore_incidents.org_user_support_account_id IS 'Tenant / support account id.';
+COMMENT ON COLUMN public.discovery_servicecore_incidents.collection_time IS 'UTC batch timestamp from collector (JSON collection_time).';
+
+-- Existing deployments: add new columns (safe to run once; ignore errors if columns exist).
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS agent_full_name TEXT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS org_user_support_account_name TEXT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS org_user_support_account_id BIGINT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS sla_policy_name TEXT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS company_name TEXT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS times_reopen BIGINT;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS is_active BOOLEAN;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN;
+-- ALTER TABLE public.discovery_servicecore_incidents ADD COLUMN IF NOT EXISTS is_merged BOOLEAN;

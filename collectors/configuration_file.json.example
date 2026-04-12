@@ -92,6 +92,7 @@
         "username": "<USERNAME>",
         "password": "<PASSWORD>",
         "lookback_hours": 24,
-        "page_size": 100
+        "page_size": 100,
+        "skip_users": false
     }
 }

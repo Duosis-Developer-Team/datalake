@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.raw_servicecore_logs (
     collected_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE public.raw_servicecore_logs IS 'ServiceCore ITSM raw API responses (Bronze). endpoint_type: incident | servicerequest';
+COMMENT ON TABLE public.raw_servicecore_logs IS 'ServiceCore ITSM raw API responses (Bronze). endpoint_type: incident | servicerequest | user';
 
 CREATE INDEX IF NOT EXISTS idx_raw_servicecore_logs_collected_at
     ON public.raw_servicecore_logs (collected_at DESC);
