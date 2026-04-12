@@ -17,6 +17,10 @@ Amaç: Müşteri odaklı, kısa ve güncel dokümantasyon.
 - Türkçe içerik; kod ve dosya adları İngilizce
 - Her değişiklikte `CHANGELOG.md` ve ilgili doküman linki
 
+#### Knowledge base
+
+- Cross-module collector catalog (compliance, GUI mapping): see `datalake-platform-knowledge-base/wiki/datalake-collectors/00-Index.md` in the platform monorepo.
+
 #### Sürdürme
 
 - Sorumlular: Kolektör bazlı CODEOWNERS
