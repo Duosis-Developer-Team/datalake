@@ -85,5 +85,13 @@
         "IpAddress": "",
         "Username": "",
         "Password": ""
+    },
+    "ServiceCore": {
+        "api_url": "https://operationsupportapi.bulutistan.com/api/v1",
+        "api_key": "<API_KEY>",
+        "username": "<USERNAME>",
+        "password": "<PASSWORD>",
+        "lookback_hours": 24,
+        "page_size": 100
     }
 }

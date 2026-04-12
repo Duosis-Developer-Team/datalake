@@ -9,4 +9,5 @@
 - **NetBackup**: Job durumları ve disk pool metrikleri. Yedekleme başarım takibi ve kapasite.
 - **S3 ICOS**: Vault inventory/metrics ve pool metrics. Nesne depolama kapasite/kullanım izleme.
 - **Envanter (Loki/NetBox)**: Lokasyon, rack, cihaz, VM envanteri. Panellerin filtreleme ve eşlemesi için referans.
+- **ServiceCore ITSM**: ServiceCore Operations Support API ile incident ve service request discovery (UPSERT). Yapılandırma yolu `python ... --config <path>` ile verilir; NiFi için tek birleşik Avro kaydı (`ServiceCoreDiscovery`). ITSM analitik ve SLA görünürlüğü; ham HTML yerine text-format alanları.
 
