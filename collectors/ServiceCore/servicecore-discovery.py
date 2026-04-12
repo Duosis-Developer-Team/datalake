@@ -20,31 +20,6 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-def load_config(config_path: str) -> Dict[str, Any]:
-    try:
-        with open(config_path, "r", encoding="utf-8") as fh:
-            root = json.load(fh)
-    except OSError:
-        sys.stderr.write(f"Configuration file not readable: {config_path}\n")
-        sys.exit(1)
-    except json.JSONDecodeError as exc:
-        sys.stderr.write(f"Invalid JSON in configuration file: {exc}\n")
-        sys.exit(1)
-
-    cfg = root.get("ServiceCore")
-    if not isinstance(cfg, dict):
-        sys.stderr.write("Missing or invalid 'ServiceCore' block in configuration.\n")
-        sys.exit(1)
-
-    required = {"api_url", "api_key", "lookback_hours", "page_size"}
-    missing = required - cfg.keys()
-    if missing:
-        sys.stderr.write(f"ServiceCore config missing keys: {sorted(missing)}\n")
-        sys.exit(1)
-
-    return cfg
-
-
 def normalize_string(value: Any) -> Optional[str]:
     if value is None or value == "":
         return None
@@ -285,25 +260,50 @@ def as_unified_service_request(rec: Dict[str, Any]) -> Dict[str, Any]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="ServiceCore ITSM discovery collector (stdout JSON array)."
+        description="ServiceCore ITSM discovery collector (stdout JSON array).",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "-c",
-        "--config",
+        "--api-url",
         required=True,
-        metavar="PATH",
-        help="Path to JSON configuration file containing a ServiceCore block.",
+        help="Base API URL (e.g. https://operationsupportapi.example.com/api/v1).",
+    )
+    parser.add_argument(
+        "--api-key",
+        required=True,
+        help="API key sent as ApiKey header.",
+    )
+    parser.add_argument(
+        "--lookback-hours",
+        type=int,
+        default=24,
+        help="Rolling window for OData $filter (hours, UTC).",
+    )
+    parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="OData $top page size.",
+    )
+    parser.add_argument(
+        "--username",
+        default=None,
+        help="Optional; reserved for future User API flows (not used for Incident/SR GET).",
+    )
+    parser.add_argument(
+        "--password",
+        default=None,
+        help="Optional; reserved for future User API flows (not used for Incident/SR GET).",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    config = load_config(args.config)
-    api_url = str(config["api_url"]).rstrip("/")
-    api_key = str(config["api_key"])
-    lookback_hours = int(config["lookback_hours"])
-    page_size = int(config["page_size"])
+    api_url = str(args.api_url).rstrip("/")
+    api_key = str(args.api_key)
+    lookback_hours = int(args.lookback_hours)
+    page_size = int(args.page_size)
 
     since = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
     since_str = since.strftime("%Y-%m-%dT%H:%M:%SZ")

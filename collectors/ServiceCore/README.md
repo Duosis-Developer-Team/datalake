@@ -2,22 +2,22 @@
 
 Python script `servicecore-discovery.py` calls the ServiceCore OData API (`Incident/GetAll`, `ServiceRequest/GetAll`), applies incremental `$filter` windows, paginates with `$top`/`$skip`, normalizes records to a **unified flat JSON shape** (all schema fields present; type-specific fields are `null` on the other ticket type), and prints a **UTF-8 JSON array** on **stdout** for Apache NiFi `ExecuteStreamCommand` → `SplitJson` → `PutDatabaseRecord`.
 
-## Configuration path (required)
+## CLI parameters (same pattern as other collectors, e.g. Zabbix Network, S3)
 
-The script **must** receive the configuration file path via **`--config` / `-c`**. It does not read a default path or environment variable for the file location.
+All connection and tuning options are passed **explicitly** via `argparse` (kebab-case long options). There is **no** `--config` / JSON file path for this script.
 
-Copy `collectors/configuration_file.json.example` to a deployment path such as `/Datalake_Project/configuration_file.json`, fill the `ServiceCore` block, then pass that path on the command line.
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--api-url` | yes | — | Base URL, e.g. `https://operationsupportapi.bulutistan.com/api/v1` |
+| `--api-key` | yes | — | API key sent as `ApiKey` header |
+| `--lookback-hours` | no | `24` | Rolling window for OData filters (UTC) |
+| `--page-size` | no | `100` | OData `$top` page size |
+| `--username` | no | — | Reserved for future User API flows (not used for Incident/SR GET) |
+| `--password` | no | — | Reserved for future User API flows (not used for Incident/SR GET) |
 
-| Key | Description |
-|-----|-------------|
-| `api_url` | Base URL, e.g. `https://operationsupportapi.bulutistan.com/api/v1` |
-| `api_key` | API key sent as `ApiKey` header |
-| `username` | Reserved / optional (not used by this script; document for related flows) |
-| `password` | Reserved / optional |
-| `lookback_hours` | Rolling window for OData filters (default `24`) |
-| `page_size` | OData `$top` page size (default `100`) |
+`configuration_file.json.example` remains a **template** for documenting the same keys when operators store secrets in a shared JSON file elsewhere; NiFi should expand values into the command line or use parameterized arguments.
 
-**Security:** Do not commit real secrets; keep production credentials only on NiFi hosts or secret stores.
+**Security:** Do not commit real secrets; pass `--api-key` via NiFi Parameter Context, secrets manager, or equivalent.
 
 ## Incremental filters
 
@@ -58,8 +58,8 @@ Use the **same** schema text for both discovery routes. Each target table only c
 
 ## NiFi checklist
 
-1. **ExecuteStreamCommand** arguments example:
-   `python3 /Datalake_Project/collectors/ServiceCore/servicecore-discovery.py --config /Datalake_Project/configuration_file.json`
+1. **ExecuteStreamCommand** — pass arguments explicitly, for example:
+   `python3 /Datalake_Project/collectors/ServiceCore/servicecore-discovery.py --api-url https://operationsupportapi.bulutistan.com/api/v1 --api-key ${servicecore.api.key} --lookback-hours 24 --page-size 100`
 2. **SplitJson:** JsonPath `$.*`
 3. **EvaluateJsonPath:** `data_type` → attribute `data_type`
 4. **RouteOnAttribute:** route `servicecore_inventory_incident` vs `servicecore_inventory_servicerequest`
@@ -69,7 +69,7 @@ Use the **same** schema text for both discovery routes. Each target table only c
 ## Manual test
 
 ```bash
-python3 servicecore-discovery.py --config /path/to/configuration_file.json | python3 -m json.tool | head
+python3 servicecore-discovery.py --api-url "https://operationsupportapi.bulutistan.com/api/v1" --api-key "YOUR_KEY" --lookback-hours 24 --page-size 100 | python3 -m json.tool | head
 ```
 
 ## References
