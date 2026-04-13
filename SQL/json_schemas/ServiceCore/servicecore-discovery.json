@@ -2,7 +2,7 @@
   "type": "record",
   "name": "ServiceCoreDiscovery",
   "namespace": "datalake.servicecore",
-  "doc": "NiFi JsonTreeReader contract: all possible columns for ServiceCore discovery UPSERTs. Collector stdout JSON is sparse (only keys present per data_type; missing field = null when mapped to DB). Timestamps are ISO-8601 strings (UTC). data_type discriminates incident vs servicerequest vs user rows.",
+  "doc": "NiFi JsonTreeReader contract: all possible columns for ServiceCore discovery UPSERTs. Collector stdout JSON is sparse (only keys present per data_type; missing field = null when mapped to DB). All fields that map to PostgreSQL TIMESTAMPTZ in discovery_* DDL use Avro logical timestamp-millis (ISO-8601 strings in JSON). Configure JsonTreeReader Date/Timestamp Format for API variants: optional fractional seconds, optional timezone (API may emit 2026-04-12T12:32:42.04 without offset or collection_time with +00:00). data_type discriminates incident vs servicerequest vs user rows.",
   "fields": [
     { "name": "data_type", "type": ["null", "string"] },
     { "name": "ticket_id", "type": ["null", "long"] },
@@ -34,13 +34,55 @@
     { "name": "times_reopen", "type": ["null", "long"] },
     { "name": "origin_from_name", "type": ["null", "string"] },
     { "name": "tags", "type": ["null", "string"] },
-    { "name": "created_date", "type": ["null", "string"] },
-    { "name": "last_updated_date", "type": ["null", "string"] },
-    { "name": "request_date", "type": ["null", "string"] },
-    { "name": "target_resolution_date", "type": ["null", "string"] },
-    { "name": "target_response_date", "type": ["null", "string"] },
-    { "name": "closed_and_done_date", "type": ["null", "string"] },
-    { "name": "deleted_date", "type": ["null", "string"] },
+    {
+      "name": "created_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "last_updated_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "request_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "target_resolution_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "target_response_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "closed_and_done_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
+    {
+      "name": "deleted_date",
+      "type": [
+        "null",
+        { "type": "long", "logicalType": "timestamp-millis" }
+      ]
+    },
     { "name": "is_active", "type": ["null", "boolean"] },
     { "name": "is_deleted", "type": ["null", "boolean"] },
     { "name": "is_merged", "type": ["null", "boolean"] },
@@ -56,6 +98,15 @@
     { "name": "job_title", "type": ["null", "string"] },
     { "name": "is_enabled", "type": ["null", "boolean"] },
     { "name": "soft_deleted", "type": ["null", "boolean"] },
-    { "name": "collection_time", "type": ["null", "string"] }
+    {
+      "name": "collection_time",
+      "type": [
+        "null",
+        {
+          "type": "long",
+          "logicalType": "timestamp-millis"
+        }
+      ]
+    }
   ]
 }
