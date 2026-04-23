@@ -94,5 +94,19 @@
         "lookback_hours": 24,
         "page_size": 100,
         "skip_users": false
+    },
+    "CRM": {
+        "Dynamics365": {
+            "__note__": "All values here are documentation-only templates. Real secrets MUST be injected via NiFi Parameter Context, not stored in this file.",
+            "tenant_id": "<TENANT_ID>",
+            "client_id": "<CLIENT_ID>",
+            "client_secret": "<CLIENT_SECRET>",
+            "crm_url": "https://<ORG>.crm4.dynamics.com",
+            "api_version": "v9.2",
+            "lookback_hours": 24,
+            "page_size": 5000,
+            "http_timeout_sec": 60,
+            "http_retries": 3
+        }
     }
 }
