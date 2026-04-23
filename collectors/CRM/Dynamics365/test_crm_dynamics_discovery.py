@@ -472,15 +472,52 @@ class TestFetchPaginated(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(call_count[0], 2)
 
-    def test_exits_on_http_error(self):
-        import requests as req_lib
+    def test_returns_empty_on_403(self):
+        """403 Forbidden must NOT raise SystemExit — returns [] and logs a warning."""
         session = self._build_session()
         resp = MagicMock()
-        resp.raise_for_status.side_effect = req_lib.HTTPError("500 Server Error")
+        resp.ok = False
+        resp.status_code = 403
+        resp.reason = "Forbidden"
+        resp.json.return_value = {"error": {"message": "Principal lacks privilege"}}
         session.get.return_value = resp
 
-        with self.assertRaises(SystemExit):
-            mod.fetch_paginated(session, "https://crm.example.com/api/accounts", None, 30)
+        result = mod.fetch_paginated(session, "https://crm.example.com/api/accounts", None, 30)
+        self.assertEqual(result, [])
+
+    def test_returns_empty_on_401(self):
+        """401 Unauthorized must NOT raise SystemExit — returns []."""
+        session = self._build_session()
+        resp = MagicMock()
+        resp.ok = False
+        resp.status_code = 401
+        resp.reason = "Unauthorized"
+        resp.json.return_value = {}
+        session.get.return_value = resp
+
+        result = mod.fetch_paginated(session, "https://crm.example.com/api/accounts", None, 30)
+        self.assertEqual(result, [])
+
+    def test_returns_empty_on_other_http_error(self):
+        """Non-auth HTTP errors also return [] instead of exiting."""
+        session = self._build_session()
+        resp = MagicMock()
+        resp.ok = False
+        resp.status_code = 500
+        resp.reason = "Internal Server Error"
+        session.get.return_value = resp
+
+        result = mod.fetch_paginated(session, "https://crm.example.com/api/accounts", None, 30)
+        self.assertEqual(result, [])
+
+    def test_returns_empty_on_network_error(self):
+        """Network-level exceptions return [] instead of exiting."""
+        import requests as req_lib
+        session = self._build_session()
+        session.get.side_effect = req_lib.ConnectionError("Connection refused")
+
+        result = mod.fetch_paginated(session, "https://crm.example.com/api/accounts", None, 30)
+        self.assertEqual(result, [])
 
     def test_applies_odata_filter(self):
         session = self._build_session()

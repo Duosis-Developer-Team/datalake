@@ -174,6 +174,18 @@ def fetch_paginated(
     odata_filter: Optional[str],
     timeout: int,
 ) -> List[Dict[str, Any]]:
+    """
+    Fetch all pages from an OData endpoint, following @odata.nextLink.
+
+    Permission / access errors (403 Forbidden, 401 Unauthorized) are treated as
+    "this endpoint is not accessible with the current service principal" — the
+    function logs a warning and returns an empty list so that other entity
+    fetches continue unaffected.
+
+    Transient server errors (429, 5xx) are handled by the urllib3 Retry policy
+    on the session adapter. Any other unexpected HTTP error is also logged and
+    returns an empty list rather than exiting.
+    """
     params: Dict[str, Any] = {}
     if odata_filter:
         params["$filter"] = odata_filter
@@ -188,19 +200,40 @@ def fetch_paginated(
             else:
                 # nextLink already includes query parameters
                 resp = session.get(next_url, timeout=timeout)
-            resp.raise_for_status()
-            payload = resp.json()
         except requests.RequestException as exc:
-            sys.stderr.write(f"HTTP request failed: {exc}\n")
-            sys.exit(1)
+            sys.stderr.write(f"[WARN] Network error fetching {url}: {exc} — skipping entity.\n")
+            return []
+
+        # Permission / auth errors: skip entity, do not abort the whole run
+        if resp.status_code in (401, 403):
+            try:
+                detail = resp.json().get("error", {}).get("message", resp.text[:200])
+            except Exception:
+                detail = resp.text[:200]
+            sys.stderr.write(
+                f"[WARN] {resp.status_code} {resp.reason} for {url} — "
+                f"app registration may lack the required Dynamics 365 privilege. "
+                f"Skipping entity. Detail: {detail}\n"
+            )
+            return []
+
+        # Any other HTTP error: log and skip
+        if not resp.ok:
+            sys.stderr.write(
+                f"[WARN] HTTP {resp.status_code} {resp.reason} for {url} — skipping entity.\n"
+            )
+            return []
+
+        try:
+            payload = resp.json()
         except ValueError as exc:
-            sys.stderr.write(f"Invalid JSON response: {exc}\n")
-            sys.exit(1)
+            sys.stderr.write(f"[WARN] Invalid JSON from {url}: {exc} — skipping entity.\n")
+            return []
 
         batch = payload.get("value")
         if not isinstance(batch, list):
-            sys.stderr.write("Unexpected API response: missing 'value' array.\n")
-            sys.exit(1)
+            sys.stderr.write(f"[WARN] Unexpected API response from {url}: missing 'value' array — skipping entity.\n")
+            return []
 
         results.extend(batch)
         next_url = payload.get("@odata.nextLink")
