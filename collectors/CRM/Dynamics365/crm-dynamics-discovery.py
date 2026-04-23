@@ -127,14 +127,26 @@ def _http_retry_policy(retries: int) -> Retry:
             return Retry(**base)
 
 
-def get_access_token(tenant_id: str, client_id: str, client_secret: str, crm_url: str, timeout: int) -> str:
+def get_access_token(
+    tenant_id: str,
+    client_id: str,
+    client_secret: str,
+    crm_url: str,
+    timeout: int,
+    debug: bool = False,
+) -> str:
+    resource_url = crm_url.rstrip("/")
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     payload = {
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": client_secret,
-        "scope": f"{crm_url.rstrip('/')}/.default",
+        "scope": f"{resource_url}/.default",
     }
+    if debug:
+        sys.stderr.write(f"[DEBUG] Token URL: {token_url}\n")
+        sys.stderr.write(f"[DEBUG] scope: {resource_url}/.default\n")
+
     resp = requests.post(token_url, data=payload, timeout=timeout)
     if resp.status_code != 200:
         sys.stderr.write(f"Token request failed ({resp.status_code}): {resp.text[:200]}\n")
@@ -143,20 +155,37 @@ def get_access_token(tenant_id: str, client_id: str, client_secret: str, crm_url
     if not token:
         sys.stderr.write("Token response missing access_token.\n")
         sys.exit(1)
+
+    if debug:
+        # Decode JWT payload (no signature check — diagnostic only)
+        try:
+            import base64 as _b64
+            parts = token.split(".")
+            padding = 4 - len(parts[1]) % 4
+            raw = _b64.urlsafe_b64decode(parts[1] + "=" * padding)
+            claims = json.loads(raw)
+            sys.stderr.write(
+                f"[DEBUG] Token claims: aud={claims.get('aud')!r} "
+                f"appid={claims.get('appid') or claims.get('azp')!r} "
+                f"iss={claims.get('iss')!r} "
+                f"roles={claims.get('roles', [])!r}\n"
+            )
+        except Exception as exc:
+            sys.stderr.write(f"[DEBUG] Could not decode token: {exc}\n")
+
     return token
 
 
 def build_session(token: str, page_size: int, retries: int) -> requests.Session:
     session = requests.Session()
+    # Use wildcard annotation (same as the analyze script) to maximise D365 compatibility.
+    # The maxpagesize preference is merged into the same Prefer header as per OData spec.
     session.headers.update({
         "Authorization": f"Bearer {token}",
         "OData-MaxVersion": "4.0",
         "OData-Version": "4.0",
         "Accept": "application/json",
-        "Prefer": (
-            f'odata.include-annotations="OData.Community.Display.V1.FormattedValue",'
-            f"odata.maxpagesize={page_size}"
-        ),
+        "Prefer": f'odata.include-annotations="*",odata.maxpagesize={page_size}',
     })
     adapter = HTTPAdapter(max_retries=_http_retry_policy(retries))
     session.mount("https://", adapter)
@@ -646,6 +675,10 @@ def parse_args() -> argparse.Namespace:
         "--full-snapshot", action="store_true",
         help="Ignore lookback-hours; fetch all records (initial backfill mode)."
     )
+    parser.add_argument(
+        "--debug-token", action="store_true",
+        help="Print decoded JWT claims and request details to stderr (diagnostic only)."
+    )
     return parser.parse_args()
 
 
@@ -668,7 +701,10 @@ def main() -> None:
         since_filter = f"modifiedon ge {since_str}"
 
     # OAuth2
-    token = get_access_token(args.tenant_id, args.client_id, args.client_secret, crm_url, timeout)
+    token = get_access_token(
+        args.tenant_id, args.client_id, args.client_secret, crm_url, timeout,
+        debug=args.debug_token,
+    )
     session = build_session(token, args.page_size, args.http_retries)
     collection_time = datetime.now(timezone.utc).isoformat()
 
