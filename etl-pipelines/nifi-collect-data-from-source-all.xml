@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <template encoding-version="1.3">
-    <description></description>
+    <description>Master datalake ingest template. CRM Dynamics 365 discovery: the flow must include six RouteOnAttribute branches and six PutDatabaseRecord UPSERT processors for data_type values from crm-dynamics-discovery.py; copy-ready property names and EL expressions are in datalake/SQL/CRM/NiFi-scope-note.md. JsonTreeReader schema text: datalake/SQL/json_schemas/CRM/crm-dynamics-discovery.json.</description>
     <groupId>1f70d4fc-0192-1000-4533-a0ba73579959</groupId>
     <name>nifi-collect-data-from-source-all</name>
     <snippet>

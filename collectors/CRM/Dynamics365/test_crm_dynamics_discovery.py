@@ -4,14 +4,14 @@
 Unit tests for crm-dynamics-discovery.py.
 
 Tests cover:
-- normalize_* functions (all 14 entity normalizers)
+- normalize_* functions (all 6 entity normalizers: account, product, pricelevel, productpricelevel, salesorder, salesorderdetail)
 - sparse_record: None-value dropping
-- normalize_datetime_iso: various ISO-8601 inputs
+- normalize_timestamp_millis: various ISO-8601 inputs -> epoch ms UTC
 - normalize_date: date extraction
 - _fv / _lookup_id / _lookup_name: OData annotation helpers
 - fetch_paginated: @odata.nextLink following (mock)
 - 429 / 5xx retry behavior (session-level, via mock)
-- data_type and UPSERT key contract for every entity
+- data_type and UPSERT key contract for every supported entity
 """
 import json
 import sys
@@ -53,7 +53,9 @@ def _lv_name_key(field: str) -> str:
     return f"_{field}_value@OData.Community.Display.V1.FormattedValue"
 
 
-COLLECTION_TIME = "2026-04-24T10:00:00+00:00"
+COLLECTION_TIME_MS = int(
+    datetime(2026, 4, 24, 10, 0, 0, tzinfo=timezone.utc).timestamp() * 1000
+)
 
 
 # ---------------------------------------------------------------------------
@@ -93,25 +95,30 @@ class TestNormalizeFloat(unittest.TestCase):
         self.assertIsNone(mod.normalize_float(None))
 
 
-class TestNormalizeDatetimeIso(unittest.TestCase):
+class TestNormalizeTimestampMillis(unittest.TestCase):
     def test_z_suffix(self):
-        result = mod.normalize_datetime_iso("2026-01-15T09:30:00Z")
-        self.assertIn("2026-01-15", result)
-        self.assertTrue(result.endswith("+00:00"))
+        result = mod.normalize_timestamp_millis("2026-01-15T09:30:00Z")
+        self.assertIsInstance(result, int)
+        dt = datetime.fromtimestamp(result / 1000.0, tz=timezone.utc)
+        self.assertEqual(dt.year, 2026)
+        self.assertEqual(dt.month, 1)
+        self.assertEqual(dt.day, 15)
 
     def test_no_timezone(self):
-        result = mod.normalize_datetime_iso("2026-01-15T09:30:00")
-        self.assertIn("2026-01-15", result)
+        result = mod.normalize_timestamp_millis("2026-01-15T09:30:00")
+        self.assertIsInstance(result, int)
 
     def test_none(self):
-        self.assertIsNone(mod.normalize_datetime_iso(None))
+        self.assertIsNone(mod.normalize_timestamp_millis(None))
 
     def test_empty(self):
-        self.assertIsNone(mod.normalize_datetime_iso(""))
+        self.assertIsNone(mod.normalize_timestamp_millis(""))
 
     def test_with_offset(self):
-        result = mod.normalize_datetime_iso("2026-01-15T09:30:00+03:00")
-        self.assertIn("2026-01-15", result)
+        result = mod.normalize_timestamp_millis("2026-01-15T09:30:00+03:00")
+        self.assertIsInstance(result, int)
+        dt = datetime.fromtimestamp(result / 1000.0, tz=timezone.utc)
+        self.assertEqual(dt.hour, 6)  # 09:30+03 -> 06:30 UTC
 
 
 class TestNormalizeDate(unittest.TestCase):
@@ -211,55 +218,6 @@ def _make_raw_productpricelevel() -> Dict[str, Any]:
     }
 
 
-def _make_raw_opportunity() -> Dict[str, Any]:
-    return {
-        "opportunityid": "opp-uuid-1",
-        "name": "Q2 Expansion",
-        _lv_key("customerid"): "acc-uuid-1",
-        _lv_name_key("customerid"): "Acme Corp",
-        "estimatedvalue": 100000.0,
-        "closeprobability": 75,
-        "statecode": 0,
-        _fv_key("statecode"): "Open",
-    }
-
-
-def _make_raw_opportunityproduct() -> Dict[str, Any]:
-    return {
-        "opportunityproductid": "opprod-uuid-1",
-        _lv_key("opportunityid"): "opp-uuid-1",
-        _lv_key("productid"): "prod-uuid-1",
-        _lv_name_key("productid"): "Cloud VM - 2vCPU",
-        "quantity": 10.0,
-        "priceperunit": 5000.0,
-        "extendedamount": 50000.0,
-    }
-
-
-def _make_raw_quote() -> Dict[str, Any]:
-    return {
-        "quoteid": "quote-uuid-1",
-        "name": "Q2 Quote",
-        "quotenumber": "QUO-001",
-        _lv_key("customerid"): "acc-uuid-1",
-        _lv_name_key("customerid"): "Acme Corp",
-        "totalamount": 50000.0,
-        "statecode": 0,
-        _fv_key("statecode"): "Draft",
-    }
-
-
-def _make_raw_quotedetail() -> Dict[str, Any]:
-    return {
-        "quotedetailid": "qd-uuid-1",
-        _lv_key("quoteid"): "quote-uuid-1",
-        _lv_key("productid"): "prod-uuid-1",
-        "quantity": 10.0,
-        "priceperunit": 5000.0,
-        "extendedamount": 50000.0,
-    }
-
-
 def _make_raw_salesorder() -> Dict[str, Any]:
     return {
         "salesorderid": "so-uuid-1",
@@ -284,58 +242,6 @@ def _make_raw_salesorderdetail() -> Dict[str, Any]:
     }
 
 
-def _make_raw_invoice() -> Dict[str, Any]:
-    return {
-        "invoiceid": "inv-uuid-1",
-        "name": "INV-2026-001",
-        "invoicenumber": "INV-001",
-        _lv_key("customerid"): "acc-uuid-1",
-        _lv_name_key("customerid"): "Acme Corp",
-        "totalamount": 50000.0,
-        "invoicedate": "2026-03-01T00:00:00Z",
-        "statecode": 3,
-        _fv_key("statecode"): "Paid",
-    }
-
-
-def _make_raw_invoicedetail() -> Dict[str, Any]:
-    return {
-        "invoicedetailid": "invd-uuid-1",
-        _lv_key("invoiceid"): "inv-uuid-1",
-        _lv_key("productid"): "prod-uuid-1",
-        "quantity": 10.0,
-        "priceperunit": 5000.0,
-        "extendedamount": 50000.0,
-        _fv_key("_uomid_value"): "Adet",
-    }
-
-
-def _make_raw_contract() -> Dict[str, Any]:
-    return {
-        "contractid": "ctr-uuid-1",
-        "title": "Annual Service Contract",
-        "contractnumber": "CTR-001",
-        _lv_key("customerid"): "acc-uuid-1",
-        _lv_name_key("customerid"): "Acme Corp",
-        "totalprice": 120000.0,
-        "activeon": "2026-01-01T00:00:00Z",
-        "expireson": "2026-12-31T00:00:00Z",
-        "statecode": 0,
-        _fv_key("statecode"): "Active",
-    }
-
-
-def _make_raw_contractdetail() -> Dict[str, Any]:
-    return {
-        "contractdetailid": "ctrd-uuid-1",
-        _lv_key("contractid"): "ctr-uuid-1",
-        _lv_key("productid"): "prod-uuid-1",
-        "quantity": 1.0,
-        "price": 10000.0,
-        "totalprice": 120000.0,
-    }
-
-
 class TestNormalizerDataTypeAndUpsertKey(unittest.TestCase):
     """Verify data_type and primary UPSERT key for every entity."""
 
@@ -344,25 +250,14 @@ class TestNormalizerDataTypeAndUpsertKey(unittest.TestCase):
         ("normalize_product",           _make_raw_product,           "crm_inventory_product",           "productid"),
         ("normalize_pricelevel",        _make_raw_pricelevel,        "crm_inventory_pricelevel",        "pricelevelid"),
         ("normalize_productpricelevel", _make_raw_productpricelevel, "crm_inventory_productpricelevel", "productpricelevelid"),
-        ("normalize_opportunity",       _make_raw_opportunity,       "crm_inventory_opportunity",       "opportunityid"),
-        ("normalize_opportunityproduct","_make_raw_opportunityproduct","crm_inventory_opportunityproduct","opportunityproductid"),
-        ("normalize_quote",             _make_raw_quote,             "crm_inventory_quote",             "quoteid"),
-        ("normalize_quotedetail",       _make_raw_quotedetail,       "crm_inventory_quotedetail",       "quotedetailid"),
         ("normalize_salesorder",        _make_raw_salesorder,        "crm_inventory_salesorder",        "salesorderid"),
         ("normalize_salesorderdetail",  _make_raw_salesorderdetail,  "crm_inventory_salesorderdetail",  "salesorderdetailid"),
-        ("normalize_invoice",           _make_raw_invoice,           "crm_inventory_invoice",           "invoiceid"),
-        ("normalize_invoicedetail",     _make_raw_invoicedetail,     "crm_inventory_invoicedetail",     "invoicedetailid"),
-        ("normalize_contract",          _make_raw_contract,          "crm_inventory_contract",          "contractid"),
-        ("normalize_contractdetail",    _make_raw_contractdetail,    "crm_inventory_contractdetail",    "contractdetailid"),
     ]
 
     def _run_case(self, func_name, raw_factory, expected_data_type, expected_upsert_key):
         func = getattr(mod, func_name)
-        # handle string factory names for opportunityproduct
-        if isinstance(raw_factory, str):
-            raw_factory = globals()[raw_factory]
         raw = raw_factory()
-        rec = func(raw, COLLECTION_TIME)
+        rec = func(raw, COLLECTION_TIME_MS)
         self.assertEqual(rec["data_type"], expected_data_type,
                          f"{func_name}: data_type mismatch")
         self.assertIn(expected_upsert_key, rec,
@@ -381,7 +276,7 @@ class TestNormalizerDataTypeAndUpsertKey(unittest.TestCase):
 class TestNormalizeAccountFields(unittest.TestCase):
     def setUp(self):
         self.raw = _make_raw_account()
-        self.rec = mod.normalize_account(self.raw, COLLECTION_TIME)
+        self.rec = mod.normalize_account(self.raw, COLLECTION_TIME_MS)
 
     def test_name(self):
         self.assertEqual(self.rec["name"], "Acme Corp")
@@ -393,13 +288,13 @@ class TestNormalizeAccountFields(unittest.TestCase):
         self.assertEqual(self.rec["owner_name"], "Sales Manager")
 
     def test_collection_time(self):
-        self.assertEqual(self.rec["collection_time"], COLLECTION_TIME)
+        self.assertEqual(self.rec["collection_time"], COLLECTION_TIME_MS)
 
 
 class TestNormalizeProductPriceLevelFields(unittest.TestCase):
     def setUp(self):
         self.raw = _make_raw_productpricelevel()
-        self.rec = mod.normalize_productpricelevel(self.raw, COLLECTION_TIME)
+        self.rec = mod.normalize_productpricelevel(self.raw, COLLECTION_TIME_MS)
 
     def test_amount(self):
         self.assertAlmostEqual(self.rec["amount"], 5000.0)
@@ -412,18 +307,48 @@ class TestNormalizeProductPriceLevelFields(unittest.TestCase):
         self.assertEqual(self.rec["pricelevel_name"], "TL Fiyat Listesi")
 
 
-class TestNormalizeInvoiceDate(unittest.TestCase):
-    def test_invoicedate_extracted_as_date(self):
-        raw = _make_raw_invoice()
-        rec = mod.normalize_invoice(raw, COLLECTION_TIME)
-        self.assertEqual(rec.get("invoicedate"), "2026-03-01")
+class TestRealizedSalesorderFilterOnly(unittest.TestCase):
+    """Sales OData filter must always restrict to Fulfilled/Invoiced orders."""
+
+    def test_filter_state_only_when_full_snapshot(self):
+        f = mod.build_realized_salesorder_odata_filter(None)
+        self.assertEqual(f, mod.REALIZED_SALESORDER_STATE_FILTER)
+
+    def test_filter_combines_modifiedon_and_state(self):
+        since = "modifiedon ge 2026-04-01T00:00:00Z"
+        f = mod.build_realized_salesorder_odata_filter(since)
+        self.assertIn(since, f)
+        self.assertIn(mod.REALIZED_SALESORDER_STATE_FILTER, f)
+        self.assertIn(" and ", f)
+
+
+class TestBuildSalesorderOdataFilter(unittest.TestCase):
+    """--include-active-orders bypasses Fulfilled/Invoiced-only filter."""
+
+    def test_default_matches_realized_filter(self):
+        self.assertEqual(
+            mod.build_salesorder_odata_filter(None, False),
+            mod.REALIZED_SALESORDER_STATE_FILTER,
+        )
+        since = "modifiedon ge 2026-04-01T00:00:00Z"
+        self.assertEqual(
+            mod.build_salesorder_odata_filter(since, False),
+            mod.build_realized_salesorder_odata_filter(since),
+        )
+
+    def test_include_active_full_snapshot_no_filter(self):
+        self.assertIsNone(mod.build_salesorder_odata_filter(None, True))
+
+    def test_include_active_with_lookback_only_since(self):
+        since = "modifiedon ge 2026-04-01T00:00:00Z"
+        self.assertEqual(mod.build_salesorder_odata_filter(since, True), since)
 
 
 class TestSparseRecordIntegration(unittest.TestCase):
     def test_account_sparse(self):
         raw = {"accountid": "acc-1", "name": None, "telephone1": None, "statecode": 0,
                _fv_key("statecode"): "Active"}
-        rec = mod.normalize_account(raw, COLLECTION_TIME)
+        rec = mod.normalize_account(raw, COLLECTION_TIME_MS)
         sparse = mod.sparse_record(rec)
         self.assertNotIn("name", sparse)
         self.assertIn("accountid", sparse)
@@ -554,7 +479,7 @@ class TestFixtureProductPriceLevels(unittest.TestCase):
         errors = 0
         for raw in self.records:
             try:
-                rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME)
+                rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME_MS)
                 mod.sparse_record(rec)
             except Exception as e:
                 errors += 1
@@ -562,12 +487,12 @@ class TestFixtureProductPriceLevels(unittest.TestCase):
 
     def test_data_type_consistent(self):
         for raw in self.records[:20]:
-            rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME)
+            rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME_MS)
             self.assertEqual(rec["data_type"], "crm_inventory_productpricelevel")
 
     def test_amounts_are_float_or_none(self):
         for raw in self.records[:20]:
-            rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME)
+            rec = mod.normalize_productpricelevel(raw, COLLECTION_TIME_MS)
             amt = rec.get("amount")
             if amt is not None:
                 self.assertIsInstance(amt, float)
@@ -585,7 +510,7 @@ class TestFixtureProducts(unittest.TestCase):
         errors = 0
         for raw in self.records:
             try:
-                rec = mod.normalize_product(raw, COLLECTION_TIME)
+                rec = mod.normalize_product(raw, COLLECTION_TIME_MS)
                 mod.sparse_record(rec)
             except Exception as e:
                 errors += 1
@@ -593,7 +518,7 @@ class TestFixtureProducts(unittest.TestCase):
 
     def test_productid_always_present(self):
         for raw in self.records[:20]:
-            rec = mod.normalize_product(raw, COLLECTION_TIME)
+            rec = mod.normalize_product(raw, COLLECTION_TIME_MS)
             self.assertIsNotNone(rec.get("productid"))
 
 
@@ -607,12 +532,12 @@ class TestFixturePriceLevels(unittest.TestCase):
 
     def test_all_normalize_without_error(self):
         for raw in self.records:
-            rec = mod.normalize_pricelevel(raw, COLLECTION_TIME)
+            rec = mod.normalize_pricelevel(raw, COLLECTION_TIME_MS)
             mod.sparse_record(rec)
 
     def test_name_extracted(self):
         for raw in self.records:
-            rec = mod.normalize_pricelevel(raw, COLLECTION_TIME)
+            rec = mod.normalize_pricelevel(raw, COLLECTION_TIME_MS)
             if raw.get("name"):
                 self.assertIsNotNone(rec.get("name"))
 

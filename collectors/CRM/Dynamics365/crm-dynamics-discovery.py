@@ -3,9 +3,13 @@
 """
 Dynamics 365 CRM discovery collector.
 
-Fetches Accounts, Product Catalog, Sales funnel (Opportunity → Quote → SalesOrder → Invoice)
-and Contracts via the Dynamics 365 Web API (OData v4), normalizes records to sparse flat JSON
-for NiFi PutDatabaseRecord (UPSERT into discovery_crm_* tables).
+Fetches **active** Accounts (`statecode eq 0`), **active** Product Catalog (`statecode eq 0`),
+and realized Sales only — Fulfilled / Invoiced salesorders (`statecode` 3 or 4) with
+`order_details` line items — via the Dynamics 365 Web API (OData v4). Does **not** call
+invoices, contracts, opportunities, or quotes (narrower privilege surface).
+Normalizes records
+to sparse flat JSON for NiFi PutDatabaseRecord (UPSERT into discovery_crm_* tables).
+Timestamps use Avro logicalType timestamp-millis (epoch ms UTC) so JDBC binds TIMESTAMPTZ.
 
 Each array element is sparse: only keys relevant to that record's data_type are emitted;
 omitted keys correspond to null in the unified Avro schema (crm-dynamics-discovery.json).
@@ -61,8 +65,8 @@ def normalize_bool(value: Any) -> Optional[bool]:
     return bool(value)
 
 
-def normalize_datetime_iso(value: Any) -> Optional[str]:
-    """Return ISO-8601 string in UTC or None."""
+def _parse_odata_datetime(value: Any) -> Optional[datetime]:
+    """Parse Dynamics / OData datetime string to aware UTC datetime, or None."""
     if value is None or value == "":
         return None
     s = str(value).strip()
@@ -75,17 +79,25 @@ def normalize_datetime_iso(value: Any) -> Optional[str]:
             dt = datetime.fromisoformat(s)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).isoformat()
+        return dt.astimezone(timezone.utc)
     except ValueError:
-        return s
+        return None
+
+
+def normalize_timestamp_millis(value: Any) -> Optional[int]:
+    """Epoch milliseconds UTC for Avro timestamp-millis / NiFi JDBC."""
+    dt = _parse_odata_datetime(value)
+    if dt is None:
+        return None
+    return int(dt.timestamp() * 1000)
 
 
 def normalize_date(value: Any) -> Optional[str]:
     """Return date as ISO-8601 date string (YYYY-MM-DD) or None."""
-    dt = normalize_datetime_iso(value)
+    dt = _parse_odata_datetime(value)
     if dt is None:
         return None
-    return dt[:10]
+    return dt.date().isoformat()
 
 
 def _fv(raw: Dict[str, Any], field: str) -> Optional[str]:
@@ -202,9 +214,13 @@ def fetch_paginated(
     url: str,
     odata_filter: Optional[str],
     timeout: int,
+    extra_params: Optional[Dict[str, str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Fetch all pages from an OData endpoint, following @odata.nextLink.
+
+    Optional ``extra_params`` (e.g. ``$expand``) are merged into the first request
+    only; ``@odata.nextLink`` responses carry their own query string.
 
     Permission / access errors (403 Forbidden, 401 Unauthorized) are treated as
     "this endpoint is not accessible with the current service principal" — the
@@ -218,6 +234,8 @@ def fetch_paginated(
     params: Dict[str, Any] = {}
     if odata_filter:
         params["$filter"] = odata_filter
+    if extra_params:
+        params.update(extra_params)
 
     results: List[Dict[str, Any]] = []
     next_url: Optional[str] = url
@@ -280,10 +298,10 @@ def sparse_record(rec: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Normalizers — one per entity (14 data_types)
+# Normalizers — one per entity (6 data_types)
 # ---------------------------------------------------------------------------
 
-def normalize_account(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_account(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_account",
         "accountid": normalize_string(raw.get("accountid")),
@@ -311,13 +329,13 @@ def normalize_account(raw: Dict[str, Any], collection_time: str) -> Dict[str, An
         "numberofemployees": normalize_int(raw.get("numberofemployees")),
         "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
         "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "createdon": normalize_timestamp_millis(raw.get("createdon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_product(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_product(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_product",
         "productid": normalize_string(raw.get("productid")),
@@ -338,13 +356,13 @@ def normalize_product(raw: Dict[str, Any], collection_time: str) -> Dict[str, An
         "blt_productmodel": normalize_int(raw.get("blt_productmodel")),
         "blt_productmodel_text": _fv(raw, "blt_productmodel"),
         "blt_sectionorder": normalize_int(raw.get("blt_sectionorder")),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "createdon": normalize_timestamp_millis(raw.get("createdon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_pricelevel(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_pricelevel(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_pricelevel",
         "pricelevelid": normalize_string(raw.get("pricelevelid")),
@@ -356,13 +374,13 @@ def normalize_pricelevel(raw: Dict[str, Any], collection_time: str) -> Dict[str,
         "enddate": normalize_date(raw.get("enddate")),
         "statecode": normalize_int(raw.get("statecode")),
         "statecode_text": _fv(raw, "statecode"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "createdon": normalize_timestamp_millis(raw.get("createdon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_productpricelevel(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_productpricelevel(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_productpricelevel",
         "productpricelevelid": normalize_string(raw.get("productpricelevelid")),
@@ -378,118 +396,12 @@ def normalize_productpricelevel(raw: Dict[str, Any], collection_time: str) -> Di
         "pricingmethodcode_text": _fv(raw, "pricingmethodcode"),
         "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
         "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_opportunity(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_opportunity",
-        "opportunityid": normalize_string(raw.get("opportunityid")),
-        "name": normalize_string(raw.get("name")),
-        "customerid": _lookup_id(raw, "customerid"),
-        "customerid_name": _lookup_name(raw, "customerid"),
-        "ownerid": _lookup_id(raw, "ownerid"),
-        "owner_name": _lookup_name(raw, "ownerid"),
-        "estimatedvalue": normalize_float(raw.get("estimatedvalue")),
-        "actualvalue": normalize_float(raw.get("actualvalue")),
-        "closeprobability": normalize_int(raw.get("closeprobability")),
-        "estimatedclosedate": normalize_date(raw.get("estimatedclosedate")),
-        "actualclosedate": normalize_date(raw.get("actualclosedate")),
-        "statecode": normalize_int(raw.get("statecode")),
-        "statecode_text": _fv(raw, "statecode"),
-        "statuscode": normalize_int(raw.get("statuscode")),
-        "statuscode_text": _fv(raw, "statuscode"),
-        "salesstagecode": normalize_int(raw.get("salesstagecode")),
-        "salesstagecode_text": _fv(raw, "salesstagecode"),
-        "pricelevelid": _lookup_id(raw, "pricelevelid"),
-        "pricelevel_name": _lookup_name(raw, "pricelevelid"),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "totalamount": normalize_float(raw.get("totalamount")),
-        "totaltax": normalize_float(raw.get("totaltax")),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
-
-
-def normalize_opportunityproduct(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_opportunityproduct",
-        "opportunityproductid": normalize_string(raw.get("opportunityproductid")),
-        "opportunityid": _lookup_id(raw, "opportunityid"),
-        "productid": _lookup_id(raw, "productid"),
-        "product_name": _lookup_name(raw, "productid"),
-        "productdescription": normalize_string(raw.get("productdescription")),
-        "uomid": _lookup_id(raw, "uomid"),
-        "uomid_name": _fv(raw, "_uomid_value"),
-        "quantity": normalize_float(raw.get("quantity")),
-        "priceperunit": normalize_float(raw.get("priceperunit")),
-        "baseamount": normalize_float(raw.get("baseamount")),
-        "extendedamount": normalize_float(raw.get("extendedamount")),
-        "manualdiscountamount": normalize_float(raw.get("manualdiscountamount")),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
-
-
-def normalize_quote(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_quote",
-        "quoteid": normalize_string(raw.get("quoteid")),
-        "name": normalize_string(raw.get("name")),
-        "quotenumber": normalize_string(raw.get("quotenumber")),
-        "customerid": _lookup_id(raw, "customerid"),
-        "customerid_name": _lookup_name(raw, "customerid"),
-        "opportunityid": _lookup_id(raw, "opportunityid"),
-        "ownerid": _lookup_id(raw, "ownerid"),
-        "owner_name": _lookup_name(raw, "ownerid"),
-        "totalamount": normalize_float(raw.get("totalamount")),
-        "totaltax": normalize_float(raw.get("totaltax")),
-        "totallineitemamount": normalize_float(raw.get("totallineitemamount")),
-        "effectivefrom": normalize_date(raw.get("effectivefrom")),
-        "effectiveto": normalize_date(raw.get("effectiveto")),
-        "statecode": normalize_int(raw.get("statecode")),
-        "statecode_text": _fv(raw, "statecode"),
-        "statuscode": normalize_int(raw.get("statuscode")),
-        "statuscode_text": _fv(raw, "statuscode"),
-        "pricelevelid": _lookup_id(raw, "pricelevelid"),
-        "pricelevel_name": _lookup_name(raw, "pricelevelid"),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
-
-
-def normalize_quotedetail(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_quotedetail",
-        "quotedetailid": normalize_string(raw.get("quotedetailid")),
-        "quoteid": _lookup_id(raw, "quoteid"),
-        "productid": _lookup_id(raw, "productid"),
-        "product_name": _lookup_name(raw, "productid"),
-        "productdescription": normalize_string(raw.get("productdescription")),
-        "uomid": _lookup_id(raw, "uomid"),
-        "uomid_name": _fv(raw, "_uomid_value"),
-        "quantity": normalize_float(raw.get("quantity")),
-        "priceperunit": normalize_float(raw.get("priceperunit")),
-        "baseamount": normalize_float(raw.get("baseamount")),
-        "extendedamount": normalize_float(raw.get("extendedamount")),
-        "manualdiscountamount": normalize_float(raw.get("manualdiscountamount")),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
-
-
-def normalize_salesorder(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_salesorder(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_salesorder",
         "salesorderid": normalize_string(raw.get("salesorderid")),
@@ -514,13 +426,13 @@ def normalize_salesorder(raw: Dict[str, Any], collection_time: str) -> Dict[str,
         "pricelevel_name": _lookup_name(raw, "pricelevelid"),
         "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
         "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "createdon": normalize_timestamp_millis(raw.get("createdon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_salesorderdetail(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
+def normalize_salesorderdetail(raw: Dict[str, Any], collection_time: int) -> Dict[str, Any]:
     return {
         "data_type": "crm_inventory_salesorderdetail",
         "salesorderdetailid": normalize_string(raw.get("salesorderdetailid")),
@@ -537,113 +449,50 @@ def normalize_salesorderdetail(raw: Dict[str, Any], collection_time: str) -> Dic
         "manualdiscountamount": normalize_float(raw.get("manualdiscountamount")),
         "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
         "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
+        "modifiedon": normalize_timestamp_millis(raw.get("modifiedon")),
         "collection_time": collection_time,
     }
 
 
-def normalize_invoice(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_invoice",
-        "invoiceid": normalize_string(raw.get("invoiceid")),
-        "name": normalize_string(raw.get("name")),
-        "invoicenumber": normalize_string(raw.get("invoicenumber")),
-        "customerid": _lookup_id(raw, "customerid"),
-        "customerid_name": _lookup_name(raw, "customerid"),
-        "salesorderid": _lookup_id(raw, "salesorderid"),
-        "opportunityid": _lookup_id(raw, "opportunityid"),
-        "ownerid": _lookup_id(raw, "ownerid"),
-        "owner_name": _lookup_name(raw, "ownerid"),
-        "totalamount": normalize_float(raw.get("totalamount")),
-        "totaltax": normalize_float(raw.get("totaltax")),
-        "totallineitemamount": normalize_float(raw.get("totallineitemamount")),
-        "invoicedate": normalize_date(raw.get("invoicedate")),
-        "duedate": normalize_date(raw.get("duedate")),
-        "statecode": normalize_int(raw.get("statecode")),
-        "statecode_text": _fv(raw, "statecode"),
-        "statuscode": normalize_int(raw.get("statuscode")),
-        "statuscode_text": _fv(raw, "statuscode"),
-        "pricelevelid": _lookup_id(raw, "pricelevelid"),
-        "pricelevel_name": _lookup_name(raw, "pricelevelid"),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
+# OData: realized orders only (Fulfilled=3, Invoiced=4 per Microsoft Learn salesorder_statecode).
+REALIZED_SALESORDER_STATE_FILTER = "(statecode eq 3 or statecode eq 4)"
+
+# Active master data only (Microsoft Learn: statecode 0 = Active for account/product).
+ACTIVE_ACCOUNT_FILTER = "statecode eq 0"
+ACTIVE_PRODUCT_FILTER = "statecode eq 0"
+
+# Navigation property from salesorder to salesorderdetail (Learn: order_details).
+SALESORDER_EXPAND_ORDER_DETAILS = (
+    "order_details("
+    "$select=salesorderdetailid,_salesorderid_value,_productid_value,productdescription,"
+    "_uomid_value,quantity,priceperunit,baseamount,extendedamount,manualdiscountamount,"
+    "_transactioncurrencyid_value,modifiedon"
+    ")"
+)
 
 
-def normalize_invoicedetail(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_invoicedetail",
-        "invoicedetailid": normalize_string(raw.get("invoicedetailid")),
-        "invoiceid": _lookup_id(raw, "invoiceid"),
-        "productid": _lookup_id(raw, "productid"),
-        "product_name": _lookup_name(raw, "productid"),
-        "productdescription": normalize_string(raw.get("productdescription")),
-        "uomid": _lookup_id(raw, "uomid"),
-        "uomid_name": _fv(raw, "_uomid_value"),
-        "quantity": normalize_float(raw.get("quantity")),
-        "priceperunit": normalize_float(raw.get("priceperunit")),
-        "baseamount": normalize_float(raw.get("baseamount")),
-        "extendedamount": normalize_float(raw.get("extendedamount")),
-        "manualdiscountamount": normalize_float(raw.get("manualdiscountamount")),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
+def build_realized_salesorder_odata_filter(since_filter: Optional[str]) -> str:
+    """Combine optional modifiedon lookback with Fulfilled/Invoiced state filter."""
+    if since_filter:
+        return f"({since_filter}) and {REALIZED_SALESORDER_STATE_FILTER}"
+    return REALIZED_SALESORDER_STATE_FILTER
 
 
-def normalize_contract(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_contract",
-        "contractid": normalize_string(raw.get("contractid")),
-        "title": normalize_string(raw.get("title")),
-        "contractnumber": normalize_string(raw.get("contractnumber")),
-        "customerid": _lookup_id(raw, "customerid"),
-        "customerid_name": _lookup_name(raw, "customerid"),
-        "ownerid": _lookup_id(raw, "ownerid"),
-        "owner_name": _lookup_name(raw, "ownerid"),
-        "activeon": normalize_date(raw.get("activeon")),
-        "expireson": normalize_date(raw.get("expireson")),
-        "billingfrequencycode": normalize_int(raw.get("billingfrequencycode")),
-        "billingfrequencycode_text": _fv(raw, "billingfrequencycode"),
-        "totalprice": normalize_float(raw.get("totalprice")),
-        "totallineitemdiscount": normalize_float(raw.get("totallineitemdiscount")),
-        "statecode": normalize_int(raw.get("statecode")),
-        "statecode_text": _fv(raw, "statecode"),
-        "statuscode": normalize_int(raw.get("statuscode")),
-        "statuscode_text": _fv(raw, "statuscode"),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "createdon": normalize_datetime_iso(raw.get("createdon")),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
+def build_salesorder_odata_filter(
+    since_filter: Optional[str], include_active_orders: bool
+) -> Optional[str]:
+    """
+    OData $filter for salesorders.
 
+    Production: Fulfilled (3) or Invoiced (4) only, optionally combined with modifiedon lookback.
 
-def normalize_contractdetail(raw: Dict[str, Any], collection_time: str) -> Dict[str, Any]:
-    return {
-        "data_type": "crm_inventory_contractdetail",
-        "contractdetailid": normalize_string(raw.get("contractdetailid")),
-        "contractid": _lookup_id(raw, "contractid"),
-        "productid": _lookup_id(raw, "productid"),
-        "product_name": _lookup_name(raw, "productid"),
-        "productdescription": normalize_string(raw.get("productdescription")),
-        "uomid": _lookup_id(raw, "uomid"),
-        "uomid_name": _fv(raw, "_uomid_value"),
-        "quantity": normalize_float(raw.get("quantity")),
-        "price": normalize_float(raw.get("price")),
-        "totalprice": normalize_float(raw.get("totalprice")),
-        "discount": normalize_float(raw.get("discount")),
-        "activeon": normalize_date(raw.get("activeon")),
-        "expireson": normalize_date(raw.get("expireson")),
-        "transactioncurrencyid": _lookup_id(raw, "transactioncurrencyid"),
-        "transactioncurrency_text": _lookup_name(raw, "transactioncurrencyid"),
-        "modifiedon": normalize_datetime_iso(raw.get("modifiedon")),
-        "collection_time": collection_time,
-    }
+    Test / sandbox: ``include_active_orders`` skips the state filter so Active (0) orders are
+    included; if ``since_filter`` is set, only that window is applied; if both are unset
+    (full snapshot + active), returns None so no $filter is sent (all states).
+    """
+    if include_active_orders:
+        return since_filter
+    return build_realized_salesorder_odata_filter(since_filter)
 
 
 # ---------------------------------------------------------------------------
@@ -652,7 +501,10 @@ def normalize_contractdetail(raw: Dict[str, Any], collection_time: str) -> Dict[
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Dynamics 365 CRM discovery collector (stdout JSON array).",
+        description=(
+            "Dynamics 365 CRM discovery collector (stdout JSON array). "
+            "Scope: active accounts, active catalog, realized salesorders + lines only."
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--tenant-id", required=True, help="Azure AD / Entra ID tenant ID.")
@@ -669,11 +521,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--http-retries", type=int, default=3, help="urllib3 retry count for 429/5xx.")
     parser.add_argument("--skip-accounts", action="store_true", help="Skip accounts (master data).")
     parser.add_argument("--skip-catalog", action="store_true", help="Skip product catalog entities.")
-    parser.add_argument("--skip-sales", action="store_true", help="Skip sales funnel entities.")
-    parser.add_argument("--skip-contracts", action="store_true", help="Skip contract entities.")
+    parser.add_argument("--skip-sales", action="store_true", help="Skip realized sales (salesorders + lines).")
     parser.add_argument(
         "--full-snapshot", action="store_true",
         help="Ignore lookback-hours; fetch all records (initial backfill mode)."
+    )
+    parser.add_argument(
+        "--include-active-orders", action="store_true",
+        help=(
+            "Do not restrict salesorders to Fulfilled/Invoiced (statecode 3/4). "
+            "Use for CRM test orgs where orders stay Active (0). "
+            "Still honors --lookback-hours unless --full-snapshot."
+        ),
     )
     parser.add_argument(
         "--debug-token", action="store_true",
@@ -706,13 +565,13 @@ def main() -> None:
         debug=args.debug_token,
     )
     session = build_session(token, args.page_size, args.http_retries)
-    collection_time = datetime.now(timezone.utc).isoformat()
+    collection_time = int(datetime.now(timezone.utc).timestamp() * 1000)
 
     records: List[Dict[str, Any]] = []
 
     # --- Master: Accounts (no incremental filter — always full snapshot) ---
     if not args.skip_accounts:
-        for item in fetch_paginated(session, f"{api_base}accounts", None, timeout):
+        for item in fetch_paginated(session, f"{api_base}accounts", ACTIVE_ACCOUNT_FILTER, timeout):
             if not isinstance(item, dict):
                 continue
             rec = normalize_account(item, collection_time)
@@ -721,7 +580,7 @@ def main() -> None:
 
     # --- Catalog (no incremental filter) ---
     if not args.skip_catalog:
-        for item in fetch_paginated(session, f"{api_base}products", None, timeout):
+        for item in fetch_paginated(session, f"{api_base}products", ACTIVE_PRODUCT_FILTER, timeout):
             if not isinstance(item, dict):
                 continue
             rec = normalize_product(item, collection_time)
@@ -742,79 +601,31 @@ def main() -> None:
             if rec.get("productpricelevelid"):
                 records.append(sparse_record(rec))
 
-    # --- Sales funnel (incremental filter applies) ---
+    # --- Realized sales: Fulfilled/Invoiced salesorders + expanded line items ---
     if not args.skip_sales:
-        for item in fetch_paginated(session, f"{api_base}opportunities", since_filter, timeout):
+        so_filter = build_salesorder_odata_filter(since_filter, args.include_active_orders)
+        expand_params = {"$expand": SALESORDER_EXPAND_ORDER_DETAILS}
+        for item in fetch_paginated(
+            session, f"{api_base}salesorders", so_filter, timeout, extra_params=expand_params
+        ):
             if not isinstance(item, dict):
                 continue
-            rec = normalize_opportunity(item, collection_time)
-            if rec.get("opportunityid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}opportunityproducts", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_opportunityproduct(item, collection_time)
-            if rec.get("opportunityproductid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}quotes", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_quote(item, collection_time)
-            if rec.get("quoteid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}quotedetails", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_quotedetail(item, collection_time)
-            if rec.get("quotedetailid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}salesorders", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_salesorder(item, collection_time)
-            if rec.get("salesorderid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}salesorderdetails", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_salesorderdetail(item, collection_time)
-            if rec.get("salesorderdetailid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}invoices", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_invoice(item, collection_time)
-            if rec.get("invoiceid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}invoicedetails", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_invoicedetail(item, collection_time)
-            if rec.get("invoicedetailid"):
-                records.append(sparse_record(rec))
-
-    # --- Contracts (incremental filter applies) ---
-    if not args.skip_contracts:
-        for item in fetch_paginated(session, f"{api_base}contracts", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_contract(item, collection_time)
-            if rec.get("contractid"):
-                records.append(sparse_record(rec))
-
-        for item in fetch_paginated(session, f"{api_base}contractdetails", since_filter, timeout):
-            if not isinstance(item, dict):
-                continue
-            rec = normalize_contractdetail(item, collection_time)
-            if rec.get("contractdetailid"):
-                records.append(sparse_record(rec))
+            order_lines = item.get("order_details")
+            # Emit header (normalize ignores unknown keys such as order_details)
+            so_rec = normalize_salesorder(item, collection_time)
+            if so_rec.get("salesorderid"):
+                records.append(sparse_record(so_rec))
+            so_id = normalize_string(item.get("salesorderid"))
+            if isinstance(order_lines, list):
+                for line in order_lines:
+                    if not isinstance(line, dict):
+                        continue
+                    detail_raw = dict(line)
+                    if so_id and not detail_raw.get("_salesorderid_value"):
+                        detail_raw["_salesorderid_value"] = so_id
+                    det_rec = normalize_salesorderdetail(detail_raw, collection_time)
+                    if det_rec.get("salesorderdetailid"):
+                        records.append(sparse_record(det_rec))
 
     sys.stdout.write(json.dumps(records, ensure_ascii=False))
     sys.stdout.flush()

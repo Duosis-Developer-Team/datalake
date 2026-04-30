@@ -1,0 +1,2 @@
+# Optional dev / seed dependencies for CRM Dynamics365 collectors
+PyYAML>=6.0
