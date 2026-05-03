@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-VMware Unified Data Collector
+VMware Unified Performance Metrics Collector
 
-Tek scriptte 4 eski VMware collector'ın (datacenter/cluster/host/vm) tüm data_type
-output'larını üretir. configuration_file.json'dan VmWare bloğunu okur, listedeki her
-vCenter'a bağlanır ve tek JSON array olarak stdout'a basar.
+4 eski VMware performance_metrics scriptini (datacenter/cluster/host/vm) tek
+dosyada birleştirir. configuration_file.json'dan VmWare bilgilerini okur,
+listedeki her vCenter'a bağlanır ve toplanan metrikleri JSON array (default)
+veya plain-text (eski format) olarak stdout'a basar.
 
-Üretilen data_type'lar:
-- vmware_datacenter_config / vmware_datacenter_metrics_agg
-- vmware_cluster_config / vmware_cluster_metrics_agg
-- vmware_host_hardware / vmware_host_runtime / vmware_host_storage / vmware_host_perf_raw / vmware_host_perf_agg
-- vmware_vm_config / vmware_vm_runtime / vmware_vm_storage / vmware_vm_perf_raw / vmware_vm_perf_agg
+Üretilen 4 data_type:
+- vmware_datacenter_performance_metrics
+- vmware_cluster_performance_metrics
+- vmware_host_performance_metrics
+- vmware_vm_performance_metrics
 
-Output: stdout = JSON array. stderr = log/uyarı.
+Hesaplamalar, field/label isimleri (büyük-küçük harf ve boşluklar dahil),
+unit conversion mantığı, sampling penceresi (15 dk / 300 sn) eski 4 script
+ile birebir korunur. "total storage capacity gb" gibi label'larda eski unit
+tutarsızlıkları (örn. *1024 ile MB döndüren "gb" alanı) bilerek korunur.
+
+Output: stdout = JSON array (veya text). stderr = log/uyarı.
 """
 
 import json
@@ -23,14 +29,15 @@ import argparse
 import sys
 import os
 from datetime import datetime, timezone, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
+from math import floor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim, vmodl
 
 
 # ---------------------------------------------------------------------------
-# Config path search (NetBackup collector mantığı)
+# Config path search (NetBackup collector ile aynı mantık)
 # ---------------------------------------------------------------------------
 CONFIG_PATH_CANDIDATES = [
     "configuration_file.json",
@@ -43,7 +50,7 @@ CONFIG_PATH_CANDIDATES = [
 # ---------------------------------------------------------------------------
 # Performance counter setleri (eski scriptlerle birebir aynı)
 # ---------------------------------------------------------------------------
-COMMON_PERF_COUNTERS = [
+COMMON_COUNTERS = [
     'cpu.usage.average',
     'mem.usage.average',
     'disk.read.average',
@@ -51,7 +58,7 @@ COMMON_PERF_COUNTERS = [
     'net.usage.average',
 ]
 
-HOST_EXTRA_COUNTERS = [
+HOST_COUNTERS = COMMON_COUNTERS + [
     'power.power.average',
 ]
 
@@ -61,24 +68,19 @@ HOST_EXTRA_COUNTERS = [
 # ---------------------------------------------------------------------------
 class VMwareCollectorConfig:
     """vmware_data_collector çalışma konfigürasyonu."""
+
     def __init__(self):
         self.vcenters = []
         self.port = 443
         self.username = None
         self.password = None
-        self.perf_interval = 300
-        self.perf_window = 900
-        self.max_workers = 32
-        self.perf_batch_size = 24
-        self.timeout = 1800
-        self.max_hosts = 0
-        self.max_vms = 0
+        self.output_format = 'json'
         self.config_path_used = None
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='VMware Unified Data Collector (config-driven)'
+        description='VMware Unified Performance Metrics Collector (config-driven)'
     )
     parser.add_argument('--config', type=str, default=None,
                         help='configuration_file.json yolu (default: arama listesi)')
@@ -90,20 +92,8 @@ def parse_args():
                         help='vCenter username (config override)')
     parser.add_argument('--vmware-password', type=str, default=None,
                         help='vCenter password (config override)')
-    parser.add_argument('--perf-interval', type=int, default=300,
-                        help='Performance interval seconds (default: 300)')
-    parser.add_argument('--perf-window', type=int, default=900,
-                        help='Performance window seconds (default: 900 = 15min)')
-    parser.add_argument('--max-workers', type=int, default=32,
-                        help='Max parallel workers (default: 32)')
-    parser.add_argument('--perf-batch-size', type=int, default=24,
-                        help='Entities per QueryPerf API call (default: 24, max 64)')
-    parser.add_argument('--timeout', type=int, default=1800,
-                        help='Socket+collection timeout sec (default: 1800; 0=disabled)')
-    parser.add_argument('--max-hosts', type=int, default=0,
-                        help='Max hosts (0=all)')
-    parser.add_argument('--max-vms', type=int, default=0,
-                        help='Max VMs (0=all)')
+    parser.add_argument('--output-format', choices=['json', 'text'], default='json',
+                        help='Output format: json (default) veya text (eski plain-text)')
     parser.add_argument('--print-config-summary', action='store_true',
                         help='Sadece config yüklemeyi test eder, JSON output üretmez')
     return parser.parse_args()
@@ -133,13 +123,7 @@ def find_config_file(explicit_path=None):
 def load_config(args):
     """CLI + config dosyası birleştirilerek VMwareCollectorConfig üretir."""
     cfg = VMwareCollectorConfig()
-    cfg.perf_interval = args.perf_interval
-    cfg.perf_window = args.perf_window
-    cfg.max_workers = args.max_workers
-    cfg.perf_batch_size = args.perf_batch_size
-    cfg.timeout = args.timeout
-    cfg.max_hosts = args.max_hosts
-    cfg.max_vms = args.max_vms
+    cfg.output_format = args.output_format
 
     file_data = {}
     try:
@@ -155,11 +139,13 @@ def load_config(args):
     except Exception as e:
         print(f"Uyarı: config dosyası okunamadı: {e}", file=sys.stderr)
 
-    # vCenter listesi
+    # vCenter listesi (CLI override > config), duplicate-free, sırayı koru
     if args.vmware_ip:
-        cfg.vcenters = split_csv(args.vmware_ip)
+        raw_vcenters = split_csv(args.vmware_ip)
     else:
-        cfg.vcenters = split_csv(file_data.get('VMwareIP'))
+        raw_vcenters = split_csv(file_data.get('VMwareIP'))
+    seen = set()
+    cfg.vcenters = [v for v in raw_vcenters if not (v in seen or seen.add(v))]
 
     # Port
     port_val = args.vmware_port if args.vmware_port is not None else file_data.get('VMwarePort')
@@ -185,7 +171,6 @@ def load_config(args):
         or file_data.get('password')
     )
 
-    # Validation
     if not cfg.vcenters:
         raise ValueError("VMwareIP listesi boş (config + CLI birlikte de değer üretmedi)")
     if not cfg.username:
@@ -203,1168 +188,728 @@ def print_config_summary(cfg):
     print(f"port={cfg.port}", file=sys.stderr)
     print(f"username_present={bool(cfg.username)}", file=sys.stderr)
     print(f"password_present={bool(cfg.password)}", file=sys.stderr)
-    print(f"perf_interval={cfg.perf_interval}", file=sys.stderr)
-    print(f"perf_window={cfg.perf_window}", file=sys.stderr)
-    print(f"max_workers={cfg.max_workers}", file=sys.stderr)
-    print(f"perf_batch_size={cfg.perf_batch_size}", file=sys.stderr)
-    print(f"timeout={cfg.timeout}", file=sys.stderr)
-    print(f"max_hosts={cfg.max_hosts}", file=sys.stderr)
-    print(f"max_vms={cfg.max_vms}", file=sys.stderr)
+    print(f"output_format={cfg.output_format}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
-# Helpers (eski scriptlerle birebir aynı semantik)
+# Eski 4 scriptten birebir taşınan helper'lar
 # ---------------------------------------------------------------------------
-def safe_get_attr(obj, attr_path, default=None):
-    """Nested attribute'ı güvenli şekilde döndür."""
-    try:
-        parts = attr_path.split('.')
-        value = obj
-        for part in parts:
-            value = getattr(value, part, None)
-            if value is None:
-                return default
-        return value
-    except (AttributeError, TypeError):
-        return default
+def round_interval(now=None, interval=15):
+    """15dk pencere mantığı (eski scriptlerle birebir aynı)."""
+    if now is None:
+        now = datetime.now()
+    mins = floor(now.minute / interval) * interval
+    base = now.replace(minute=0, second=0, microsecond=0)
+    end = base + timedelta(minutes=mins)
+    start = end - timedelta(minutes=interval)
+    return start, end
 
 
-def safe_timestamp(dt_obj):
-    """datetime'ı ISO-8601 string'e çevirir. Epoch (1970) -> None (VMware unset timestamp)."""
-    if dt_obj is None:
-        return None
-    try:
-        if dt_obj.year == 1970 and dt_obj.month == 1 and dt_obj.day == 1:
-            return None
-        return dt_obj.isoformat()
-    except Exception:
-        return None
-
-
-def serialize_record(record):
-    """List/tuple alanları JSON string'e çevirir (PostgreSQL uyumu)."""
-    for key, value in record.items():
-        if isinstance(value, (list, tuple)) and not isinstance(value, str):
-            record[key] = json.dumps(value)
-    return record
-
-
-def get_folder_path(vm):
-    """VM klasör path'ini parent hierarchy üzerinden çıkarır."""
-    try:
-        path_parts = []
-        entity = vm.parent
-        while entity:
-            if isinstance(entity, vim.Folder):
-                if entity.name not in ['vm', 'Datacenters', 'host', 'network', 'datastore']:
-                    path_parts.append(entity.name)
-            elif isinstance(entity, vim.Datacenter):
-                break
-            entity = getattr(entity, 'parent', None)
-        return '/'.join(reversed(path_parts)) if path_parts else ''
-    except Exception:
-        return ''
-
-
-# ---------------------------------------------------------------------------
-# Performance counter map yardımcıları
-# ---------------------------------------------------------------------------
-def build_counter_data(perf_mgr, desired_counter_names):
-    """
-    Eski scriptlerin counter handling'ini tek yerde toplar.
-    Returns:
-        counter_ids: list[int]                                  - QueryPerf metric_id için
-        counter_info_map: dict[int, dict]                       - perf_raw zenginleştirme için
-        scale_map: dict[int, dict]                              - cluster/datacenter aggregation için (scale + percent)
-        name_to_id: dict[str, int]                              - 'cpu.usage.average' -> counter_id
-    """
-    counter_ids = []
-    counter_info_map = {}
-    scale_map = {}
-    name_to_id = {}
-
+def get_perf_counter_map(perf_mgr, keys):
+    """Counter map (full_name -> {id, scale, percent})."""
+    cmap = {}
     for pc in perf_mgr.perfCounter:
-        full_name = f"{pc.groupInfo.key}.{pc.nameInfo.key}.{pc.rollupType}"
-        if full_name not in desired_counter_names:
-            continue
-        cid = pc.key
-        scale = getattr(pc.unitInfo, 'scale', 1) or 1
-        unit_key = getattr(pc.unitInfo, 'key', '') or ''
-        unit_label = getattr(pc.unitInfo, 'label', '') or ''
-        is_percent = 'percent' in unit_key.lower() or '%' in unit_label.lower()
-
-        counter_ids.append(cid)
-        counter_info_map[cid] = {
-            'name': full_name,
-            'group': pc.groupInfo.key,
-            'name_short': pc.nameInfo.key,
-            'rollup': pc.rollupType,
-            'stats_type': pc.statsType,
-            'unit_key': pc.unitInfo.key,
-            'unit_label': pc.unitInfo.label,
-        }
-        scale_map[cid] = {
-            'name': full_name,
-            'scale': scale,
-            'is_percent': is_percent,
-        }
-        name_to_id[full_name] = cid
-
-    return counter_ids, counter_info_map, scale_map, name_to_id
+        full = f"{pc.groupInfo.key}.{pc.nameInfo.key}.{pc.rollupType}"
+        if full in keys:
+            scale = getattr(pc.unitInfo, 'scale', 1) or 1
+            uk = getattr(pc.unitInfo, 'key', '') or ''
+            lbl = getattr(pc.unitInfo, 'label', '') or ''
+            is_pct = 'percent' in uk.lower() or '%' in lbl.lower()
+            cmap[full] = {'id': pc.key, 'scale': scale, 'percent': is_pct}
+    return cmap
 
 
-def extract_scaled_stats(result_item, scale_map):
+def query_metrics(perf_mgr, entity, cmap, start, end, interval_id=300, mids=None):
     """
-    QueryPerf result'ından host/vm için scaled+percent-converted {counter_id: {avg,min,max}} üretir.
-    Eski cluster_collector / datacenter_collector'daki query_host_perf_stats davranışıyla birebir.
-    Çoklu instance durumunda eski kod 'last one wins' davranışı uyguluyor; biz de aynısını yapıyoruz.
+    Eski scriptlerle birebir uyumlu QueryPerf + scaled stats.
+    Returns: {counter_id: {'avg':, 'min':, 'max':}}
     """
+    if mids is None:
+        mids = [vim.PerformanceManager.MetricId(counterId=v['id'], instance='*')
+                for v in cmap.values()]
+    spec = vim.PerformanceManager.QuerySpec(
+        entity=entity,
+        metricId=mids,
+        startTime=start,
+        endTime=end,
+        intervalId=interval_id,
+    )
+    try:
+        results = perf_mgr.QueryPerf(querySpec=[spec])
+    except vmodl.fault.InvalidArgument as e:
+        raise RuntimeError(f"QueryPerf invalid argument: {e}")
+    samples = {}
+    if results:
+        for m in results[0].value:
+            cid = m.id.counterId
+            samples.setdefault(cid, []).extend(m.value or [])
     stats = {}
-    if not result_item or not result_item.value:
-        return stats
-    for perf_metric in result_item.value:
-        cid = perf_metric.id.counterId
-        if not perf_metric.value:
+    for cid, vals in samples.items():
+        if not vals:
             continue
-        info = scale_map.get(cid)
-        if not info:
-            continue
-        scale = info.get('scale', 1) or 1
-        is_percent = info.get('is_percent', False)
-        raw_avg = sum(perf_metric.value) / len(perf_metric.value)
-        raw_min = min(perf_metric.value)
-        raw_max = max(perf_metric.value)
+        info = next(v for v in cmap.values() if v['id'] == cid)
+        scale = info['scale']
+        raw_avg = sum(vals) / len(vals)
+        raw_min = min(vals)
+        raw_max = max(vals)
         avg = raw_avg / scale
         mn = raw_min / scale
         mx = raw_max / scale
-        if is_percent:
+        if info['percent']:
             avg /= 100.0
             mn /= 100.0
             mx /= 100.0
-        # last-one-wins (multi-instance case için eski davranış)
         stats[cid] = {'avg': avg, 'min': mn, 'max': mx}
     return stats
 
 
+def get_vcenter_identifier(content, vc, use_socket_fallback=False):
+    """Eski scriptlerle birebir aynı identifier mantığı."""
+    try:
+        opts = {
+            opt.key: opt.value
+            for opt in content.setting.QueryOptions()
+            if opt.key in ('config.vpxd.hostnameUrl', 'VirtualCenter.FQDN')
+        }
+        ident = opts.get('config.vpxd.hostnameUrl') or opts.get('VirtualCenter.FQDN')
+        if ident:
+            return ident
+    except Exception:
+        pass
+    if use_socket_fallback:
+        try:
+            return socket.getfqdn(vc)
+        except Exception:
+            return vc
+    return vc
+
+
 # ---------------------------------------------------------------------------
-# DATACENTER
+# Datacenter performance metrics (eski vmware_datacenter_performance_metrics.py)
 # ---------------------------------------------------------------------------
-def extract_datacenter_config(datacenter, vcenter_uuid, collection_timestamp):
-    """Eski vmware_datacenter_collector.extract_datacenter_config ile birebir."""
-    return {
-        "data_type": "vmware_datacenter_config",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": datacenter._moId,
-
-        "name": datacenter.name,
-        "overall_status": safe_get_attr(datacenter, 'overallStatus'),
-    }
-
-
-def calculate_datacenter_metrics_agg(
-    datacenter, vcenter_uuid, collection_timestamp,
-    cluster_objs, host_scaled_stats_by_moid, scale_map,
-    start_time, end_time
-):
+def collect_datacenter_metrics(content, identifier, perf_mgr, cmap, start, end, interval):
     """
-    Eski vmware_datacenter_collector.calculate_datacenter_metrics_agg ile birebir.
-    host_scaled_stats_by_moid: {host_moid: {counter_id: {avg,min,max}}} (önceden hesaplanmış)
+    Eski datacenter performance script'inin hesabı bire bir.
+    Tek bir record üretir (vCenter genelinde aggregate).
     """
-    total_cluster_count = len(cluster_objs)
-    total_host_count = 0
-    total_vm_count = 0
+    tmem_cap = tmem_used = 0.0
+    tstr_cap = tstr_used = 0.0
+    tcpu_cap = tcpu_used = 0.0
+    davg = dmin = dmax = 0.0
+    navg = nmin = nmax = 0.0
+    mavg = mmin = mmax = 0.0
+    cavg = cmin = cmax = 0.0
+    hcount = vcount = ccnt = 0
 
-    total_cpu_cores = 0
-    total_cpu_threads = 0
-    total_cpu_mhz_capacity = 0
-    total_cpu_mhz_used = 0
+    for dc in content.rootFolder.childEntity:
+        if not hasattr(dc, 'hostFolder'):
+            continue
+        clusters = [c for c in dc.hostFolder.childEntity
+                    if isinstance(c, vim.ClusterComputeResource)]
+        ccnt += len(clusters)
+        hosts_list, vms_list = [], []
+        for cl in clusters:
+            hosts_list.extend(cl.host)
+            for h in cl.host:
+                for vm in h.vm:
+                    if not getattr(vm.config, 'template', False):
+                        vms_list.append(vm)
+        hcount += len(hosts_list)
+        vcount += len(vms_list)
 
-    total_memory_bytes_capacity = 0
-    total_memory_bytes_used = 0
+        for ds in dc.datastore:
+            cap = ds.summary.capacity / (1024 ** 3)
+            free = ds.summary.freeSpace / (1024 ** 3)
+            tstr_cap += cap
+            tstr_used += cap - free
 
-    total_storage_bytes_capacity = 0
-    total_storage_bytes_used = 0
+        for h in hosts_list:
+            hw = h.summary.hardware
+            qs = h.summary.quickStats
+            tcpu_cap += hw.numCpuCores * hw.cpuMhz / 1000.0
+            tcpu_used += (qs.overallCpuUsage or 0) / 1000.0
+            tmem_cap += hw.memorySize / (1024 ** 3)
+            tmem_used += (qs.overallMemoryUsage or 0) / 1024.0
 
-    cpu_perc_list = []
-    mem_perc_list = []
-    disk_kbps_list = []
-    net_kbps_list = []
+            try:
+                stats = query_metrics(perf_mgr, h, cmap, start, end, interval)
+            except Exception as e:
+                print(f"Warning: DC perf query failed for host {h._moId}: {e}", file=sys.stderr)
+                stats = {}
 
-    for cluster in cluster_objs:
-        total_host_count += len(cluster.host)
+            rid = cmap['disk.read.average']['id']
+            wid = cmap['disk.write.average']['id']
+            if rid in stats and wid in stats:
+                davg += stats[rid]['avg'] + stats[wid]['avg']
+                dmin += stats[rid]['min'] + stats[wid]['min']
+                dmax += stats[rid]['max'] + stats[wid]['max']
+            nid = cmap['net.usage.average']['id']
+            if nid in stats:
+                navg += stats[nid]['avg']; nmin += stats[nid]['min']; nmax += stats[nid]['max']
+            mid = cmap['mem.usage.average']['id']
+            if mid in stats:
+                mavg += stats[mid]['avg']; mmin += stats[mid]['min']; mmax += stats[mid]['max']
+            cid = cmap['cpu.usage.average']['id']
+            if cid in stats:
+                cavg += stats[cid]['avg']; cmin += stats[cid]['min']; cmax += stats[cid]['max']
 
-        for host in cluster.host:
-            for vm in host.vm:
-                if not getattr(vm.config, 'template', False):
-                    total_vm_count += 1
+    if hcount:
+        mavg /= hcount; mmin /= hcount; mmax /= hcount
+        cavg /= hcount; cmin /= hcount; cmax /= hcount
 
-            hw = host.summary.hardware
-            qs = host.summary.quickStats
-
-            total_cpu_cores += hw.numCpuCores or 0
-            total_cpu_threads += hw.numCpuThreads or 0
-            total_cpu_mhz_capacity += (hw.numCpuCores or 0) * (hw.cpuMhz or 0)
-            total_cpu_mhz_used += qs.overallCpuUsage or 0
-
-            total_memory_bytes_capacity += hw.memorySize or 0
-            total_memory_bytes_used += (qs.overallMemoryUsage or 0) * 1024 * 1024
-
-            stats = host_scaled_stats_by_moid.get(host._moId, {})
-            for counter_id, stat in stats.items():
-                info = scale_map.get(counter_id, {})
-                counter_name = info.get('name', '')
-                if 'cpu.usage' in counter_name:
-                    cpu_perc_list.append(stat)
-                elif 'mem.usage' in counter_name:
-                    mem_perc_list.append(stat)
-                elif 'disk' in counter_name:
-                    disk_kbps_list.append(stat)
-                elif 'net.usage' in counter_name:
-                    net_kbps_list.append(stat)
-
-    # Storage from datastores
-    for ds in datacenter.datastore:
-        total_storage_bytes_capacity += ds.summary.capacity or 0
-        total_storage_bytes_used += (ds.summary.capacity or 0) - (ds.summary.freeSpace or 0)
-
-    cpu_avg = sum(s['avg'] for s in cpu_perc_list) / len(cpu_perc_list) if cpu_perc_list else 0
-    cpu_min = min(s['min'] for s in cpu_perc_list) if cpu_perc_list else 0
-    cpu_max = max(s['max'] for s in cpu_perc_list) if cpu_perc_list else 0
-
-    mem_avg = sum(s['avg'] for s in mem_perc_list) / len(mem_perc_list) if mem_perc_list else 0
-    mem_min = min(s['min'] for s in mem_perc_list) if mem_perc_list else 0
-    mem_max = max(s['max'] for s in mem_perc_list) if mem_perc_list else 0
-
-    disk_avg = sum(s['avg'] for s in disk_kbps_list) if disk_kbps_list else 0
-    disk_min = sum(s['min'] for s in disk_kbps_list) if disk_kbps_list else 0
-    disk_max = sum(s['max'] for s in disk_kbps_list) if disk_kbps_list else 0
-
-    net_avg = sum(s['avg'] for s in net_kbps_list) if net_kbps_list else 0
-    net_min = sum(s['min'] for s in net_kbps_list) if net_kbps_list else 0
-    net_max = sum(s['max'] for s in net_kbps_list) if net_kbps_list else 0
-
-    return {
-        "data_type": "vmware_datacenter_metrics_agg",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": datacenter._moId,
-        "datacenter_name": datacenter.name,
-
-        "window_start": start_time.isoformat(),
-        "window_end": end_time.isoformat(),
-
-        "total_cluster_count": total_cluster_count,
-        "total_host_count": total_host_count,
-        "total_vm_count": total_vm_count,
-
-        "total_cpu_cores": total_cpu_cores,
-        "total_cpu_threads": total_cpu_threads,
-        "total_cpu_mhz_capacity": total_cpu_mhz_capacity,
-        "total_cpu_mhz_used": total_cpu_mhz_used,
-
-        "total_memory_bytes_capacity": total_memory_bytes_capacity,
-        "total_memory_bytes_used": total_memory_bytes_used,
-
-        "total_storage_bytes_capacity": total_storage_bytes_capacity,
-        "total_storage_bytes_used": total_storage_bytes_used,
-
-        "cpu_usage_avg_percent": cpu_avg,
-        "cpu_usage_min_percent": cpu_min,
-        "cpu_usage_max_percent": cpu_max,
-        "memory_usage_avg_percent": mem_avg,
-        "memory_usage_min_percent": mem_min,
-        "memory_usage_max_percent": mem_max,
-
-        "disk_usage_avg_kbps": disk_avg,
-        "disk_usage_min_kbps": disk_min,
-        "disk_usage_max_kbps": disk_max,
-
-        "network_usage_avg_kbps": net_avg,
-        "network_usage_min_kbps": net_min,
-        "network_usage_max_kbps": net_max,
+    # Eski script ile birebir aynı field/label isimleri ve formatlama
+    record = {
+        "data_type": "vmware_datacenter_performance_metrics",
+        "datacenter": identifier,
+        "timestamp": start.strftime('%Y-%m-%d %H:%M'),
+        "total memory capacity gb": round(tmem_cap, 2),
+        "total memory used gb": round(tmem_used, 2),
+        "total storage capacity gb": int(tstr_cap * 1024),  # eski script ile birebir (MB döndürür ama label "gb")
+        "total used storage gb": int(tstr_used * 1024),     # aynısı
+        "total cpu ghz capacity": round(tcpu_cap, 2),
+        "total cpu ghz used": round(tcpu_used, 2),
+        "disk usage avg kbps": round(davg, 2),
+        "disk usage min kbps": round(dmin, 2),
+        "disk usage max kbps": round(dmax, 2),
+        "network usage avg kbps": round(navg, 2),
+        "network usage min kbps": round(nmin, 2),
+        "network usage max kbps": round(nmax, 2),
+        "memory usage avg perc": mavg,
+        "memory usage min perc": mmin,
+        "memory usage max perc": mmax,
+        "cpu usage avg perc": cavg,
+        "cpu usage min perc": cmin,
+        "cpu usage max perc": cmax,
+        "total host count": hcount,
+        "total vm count": vcount,
+        "total cluster count": ccnt,
     }
+    return record
+
+
+def datacenter_record_to_text(rec):
+    """Eski datacenter scripti formatında plain-text blok üret."""
+    lines = [
+        f"datacenter: {rec['datacenter']}",
+        f"timestamp: {rec['timestamp']}",
+        f"total memory capacity gb: {rec['total memory capacity gb']}",
+        f"total memory used gb: {rec['total memory used gb']}",
+        f"total storage capacity gb: {rec['total storage capacity gb']}",
+        f"total used storage gb: {rec['total used storage gb']}",
+        f"total cpu ghz capacity: {rec['total cpu ghz capacity']}",
+        f"total cpu ghz used: {rec['total cpu ghz used']}",
+        f"disk usage avg kbps: {rec['disk usage avg kbps']}",
+        f"disk usage min kbps: {rec['disk usage min kbps']}",
+        f"disk usage max kbps: {rec['disk usage max kbps']}",
+        f"network usage avg kbps: {rec['network usage avg kbps']}",
+        f"network usage min kbps: {rec['network usage min kbps']}",
+        f"network usage max kbps: {rec['network usage max kbps']}",
+        f"memory usage avg perc: {rec['memory usage avg perc']}",
+        f"memory usage min perc: {rec['memory usage min perc']}",
+        f"memory usage max perc: {rec['memory usage max perc']}",
+        f"cpu usage avg perc: {rec['cpu usage avg perc']}",
+        f"cpu usage min perc: {rec['cpu usage min perc']}",
+        f"cpu usage max perc: {rec['cpu usage max perc']}",
+        f"total host count: {rec['total host count']}",
+        f"total vm count: {rec['total vm count']}",
+        f"total cluster count: {rec['total cluster count']}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------------------
-# CLUSTER
+# Cluster performance metrics (eski vmware_cluster_performance_metrics.py)
 # ---------------------------------------------------------------------------
-def extract_cluster_config(cluster, vcenter_uuid, collection_timestamp, datacenter_moid):
-    """Eski vmware_cluster_collector.extract_cluster_config ile birebir."""
-    summary = cluster.summary
-    config = cluster.configuration
+def collect_cluster_metrics(identifier, cl, perf_mgr, cmap, start, end, interval):
+    """Eski cluster performance script ile birebir hesap ve label."""
+    tmem_cap = tmem_used = 0.0
+    tstr_cap = tstr_used = 0.0
+    tcpu_cap = tcpu_used = 0.0
+    davg = dmin = dmax = 0.0
+    navg = nmin = nmax = 0.0
+    mavg = mmin = mmax = 0.0
+    cavg = cmin = cmax = 0.0
 
-    return {
-        "data_type": "vmware_cluster_config",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": datacenter_moid,
-        "cluster_moid": cluster._moId,
-        "name": cluster.name,
-
-        "summary_num_hosts": safe_get_attr(summary, 'numHosts'),
-        "summary_num_cpu_cores": safe_get_attr(summary, 'numCpuCores'),
-        "summary_num_cpu_threads": safe_get_attr(summary, 'numCpuThreads'),
-        "summary_effective_cpu": safe_get_attr(summary, 'effectiveCpu'),
-        "summary_total_cpu": safe_get_attr(summary, 'totalCpu'),
-        "summary_num_effective_hosts": safe_get_attr(summary, 'numEffectiveHosts'),
-        "summary_total_memory": safe_get_attr(summary, 'totalMemory'),
-        "summary_effective_memory": safe_get_attr(summary, 'effectiveMemory'),
-        "summary_overall_status": safe_get_attr(summary, 'overallStatus'),
-
-        "config_das_enabled": safe_get_attr(config, 'dasConfig.enabled'),
-        "config_das_vm_monitoring": safe_get_attr(config, 'dasConfig.vmMonitoring'),
-        "config_das_host_monitoring": safe_get_attr(config, 'dasConfig.hostMonitoring'),
-
-        "config_drs_enabled": safe_get_attr(config, 'drsConfig.enabled'),
-        "config_drs_default_vm_behavior": safe_get_attr(config, 'drsConfig.defaultVmBehavior'),
-        "config_drs_vmotion_rate": safe_get_attr(config, 'drsConfig.vmotionRate'),
-
-        "config_dpm_enabled": safe_get_attr(config, 'dpmConfigInfo.enabled'),
-    }
-
-
-def calculate_cluster_metrics_agg(
-    cluster, vcenter_uuid, datacenter_moid, collection_timestamp,
-    host_scaled_stats_by_moid, scale_map,
-    start_time, end_time
-):
-    """Eski vmware_cluster_collector.calculate_cluster_metrics_agg ile birebir."""
-    hosts = cluster.host
-    total_host_count = len(hosts)
-    total_vm_count = sum(
-        1 for h in hosts
-        for vm in h.vm
-        if not getattr(vm.config, 'template', False)
+    hosts = cl.host
+    hcount = len(hosts)
+    vcount = sum(
+        len([vm for vm in h.vm if not getattr(vm.config, 'template', False)])
+        for h in hosts
     )
 
-    total_cpu_cores = 0
-    total_cpu_threads = 0
-    total_cpu_mhz_capacity = 0
-    total_cpu_mhz_used = 0
-    total_memory_bytes_capacity = 0
-    total_memory_bytes_used = 0
+    for ds in cl.datastore:
+        cap_gb = ds.summary.capacity / (1024 ** 3)
+        free_gb = ds.summary.freeSpace / (1024 ** 3)
+        tstr_cap += cap_gb
+        tstr_used += (cap_gb - free_gb)
 
-    cpu_perc_list = []
-    mem_perc_list = []
-    disk_kbps_list = []
-    net_kbps_list = []
+    for h in hosts:
+        hw = h.summary.hardware
+        qs = h.summary.quickStats
+        cpu_cap = (hw.numCpuCores * hw.cpuMhz) / 1000.0
+        cpu_used = (qs.overallCpuUsage or 0) / 1000.0
+        mem_cap = hw.memorySize / (1024 ** 3)
+        mem_used = (qs.overallMemoryUsage or 0) / 1024.0
 
-    for host in hosts:
-        hw = host.summary.hardware
-        qs = host.summary.quickStats
+        tcpu_cap += cpu_cap; tcpu_used += cpu_used
+        tmem_cap += mem_cap; tmem_used += mem_used
 
-        total_cpu_cores += hw.numCpuCores or 0
-        total_cpu_threads += hw.numCpuThreads or 0
-        total_cpu_mhz_capacity += (hw.numCpuCores or 0) * (hw.cpuMhz or 0)
-        total_cpu_mhz_used += qs.overallCpuUsage or 0
+        try:
+            stats = query_metrics(perf_mgr, h, cmap, start, end, interval)
+        except Exception as e:
+            print(f"Warning: Cluster perf query failed for host {h._moId}: {e}", file=sys.stderr)
+            stats = {}
 
-        total_memory_bytes_capacity += hw.memorySize or 0
-        total_memory_bytes_used += (qs.overallMemoryUsage or 0) * 1024 * 1024
+        rid = cmap['disk.read.average']['id']
+        wid = cmap['disk.write.average']['id']
+        if rid in stats and wid in stats:
+            davg += stats[rid]['avg'] + stats[wid]['avg']
+            dmin += stats[rid]['min'] + stats[wid]['min']
+            dmax += stats[rid]['max'] + stats[wid]['max']
+        nid = cmap['net.usage.average']['id']
+        if nid in stats:
+            navg += stats[nid]['avg']; nmin += stats[nid]['min']; nmax += stats[nid]['max']
+        mid = cmap['mem.usage.average']['id']
+        if mid in stats:
+            mavg += stats[mid]['avg']; mmin += stats[mid]['min']; mmax += stats[mid]['max']
+        cid = cmap['cpu.usage.average']['id']
+        if cid in stats:
+            cavg += stats[cid]['avg']; cmin += stats[cid]['min']; cmax += stats[cid]['max']
 
-        stats = host_scaled_stats_by_moid.get(host._moId, {})
-        for counter_id, stat in stats.items():
-            info = scale_map.get(counter_id, {})
-            counter_name = info.get('name', '')
-            if 'cpu.usage' in counter_name:
-                cpu_perc_list.append(stat)
-            elif 'mem.usage' in counter_name:
-                mem_perc_list.append(stat)
-            elif 'disk' in counter_name:
-                disk_kbps_list.append(stat)
-            elif 'net.usage' in counter_name:
-                net_kbps_list.append(stat)
+    if hcount:
+        mavg /= hcount; mmin /= hcount; mmax /= hcount
+        cavg /= hcount; cmin /= hcount; cmax /= hcount
 
-    total_storage_bytes_capacity = 0
-    total_storage_bytes_used = 0
-    for ds in cluster.datastore:
-        cap = ds.summary.capacity or 0
-        free = ds.summary.freeSpace or 0
-        total_storage_bytes_capacity += cap
-        total_storage_bytes_used += cap - free
+    cpu_free = tcpu_cap - tcpu_used
+    mem_free = tmem_cap - tmem_used
 
-    cpu_avg = sum(s['avg'] for s in cpu_perc_list) / len(cpu_perc_list) if cpu_perc_list else None
-    cpu_min = min(s['min'] for s in cpu_perc_list) if cpu_perc_list else None
-    cpu_max = max(s['max'] for s in cpu_perc_list) if cpu_perc_list else None
-
-    mem_avg = sum(s['avg'] for s in mem_perc_list) / len(mem_perc_list) if mem_perc_list else None
-    mem_min = min(s['min'] for s in mem_perc_list) if mem_perc_list else None
-    mem_max = max(s['max'] for s in mem_perc_list) if mem_perc_list else None
-
-    disk_avg = sum(s['avg'] for s in disk_kbps_list) if disk_kbps_list else None
-    disk_min = sum(s['min'] for s in disk_kbps_list) if disk_kbps_list else None
-    disk_max = sum(s['max'] for s in disk_kbps_list) if disk_kbps_list else None
-
-    net_avg = sum(s['avg'] for s in net_kbps_list) if net_kbps_list else None
-    net_min = sum(s['min'] for s in net_kbps_list) if net_kbps_list else None
-    net_max = sum(s['max'] for s in net_kbps_list) if net_kbps_list else None
-
-    return {
-        "data_type": "vmware_cluster_metrics_agg",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": datacenter_moid,
-        "cluster_moid": cluster._moId,
-        "cluster_name": cluster.name,
-
-        "window_start": start_time.isoformat(),
-        "window_end": end_time.isoformat(),
-
-        "total_host_count": total_host_count,
-        "total_vm_count": total_vm_count,
-
-        "total_cpu_cores": total_cpu_cores,
-        "total_cpu_threads": total_cpu_threads,
-        "total_cpu_mhz_capacity": total_cpu_mhz_capacity,
-        "total_cpu_mhz_used": total_cpu_mhz_used,
-
-        "total_memory_bytes_capacity": total_memory_bytes_capacity,
-        "total_memory_bytes_used": total_memory_bytes_used,
-
-        "total_storage_bytes_capacity": total_storage_bytes_capacity,
-        "total_storage_bytes_used": total_storage_bytes_used,
-
-        "cpu_usage_avg_percent": cpu_avg,
-        "cpu_usage_min_percent": cpu_min,
-        "cpu_usage_max_percent": cpu_max,
-        "memory_usage_avg_percent": mem_avg,
-        "memory_usage_min_percent": mem_min,
-        "memory_usage_max_percent": mem_max,
-
-        "disk_usage_avg_kbps": disk_avg,
-        "disk_usage_min_kbps": disk_min,
-        "disk_usage_max_kbps": disk_max,
-
-        "network_usage_avg_kbps": net_avg,
-        "network_usage_min_kbps": net_min,
-        "network_usage_max_kbps": net_max,
+    record = {
+        "data_type": "vmware_cluster_performance_metrics",
+        "Datacenter": identifier,
+        "Cluster": cl.name,
+        "Timestamp": start.strftime('%Y-%m-%d %H:%M'),
+        "vHost Count": hcount,
+        "VM Count": vcount,
+        "CPU GHz Capacity": round(tcpu_cap, 2),
+        "CPU GHz Used": round(tcpu_used, 2),
+        "CPU GHz Free": round(cpu_free, 2),
+        "Memory Capacity GB": round(tmem_cap, 2),
+        "Memory Used GB": round(tmem_used, 2),
+        "Memory Free GB": round(mem_free, 2),
+        "Disk Usage Avg KBps": round(davg, 2),
+        "Disk Usage Min KBps": int(dmin),
+        "Disk Usage Max KBps": int(dmax),
+        "Network Usage Avg KBps": round(navg, 2),
+        "Network Usage Min KBps": int(nmin),
+        "Network Usage Max KBps": int(nmax),
+        "Memory Usage Avg perc": mavg,
+        "Memory Usage Min perc": mmin,
+        "Memory Usage Max perc": mmax,
+        "CPU Usage Avg perc": cavg,
+        "CPU Usage Min perc": cmin,
+        "CPU Usage Max perc": cmax,
+        "Total FreeSpace GB": round(tstr_cap - tstr_used, 2),
+        "Total Capacity GB": round(tstr_cap, 2),
     }
+    return record
+
+
+def cluster_record_to_text(rec):
+    """Eski cluster scripti formatında plain-text blok."""
+    lines = [
+        f"Datacenter: {rec['Datacenter']}",
+        f"Cluster: {rec['Cluster']}",
+        f"Timestamp: {rec['Timestamp']}",
+        f"vHost Count: {rec['vHost Count']}",
+        f"VM Count: {rec['VM Count']}",
+        f"CPU GHz Capacity: {rec['CPU GHz Capacity']}",
+        f"CPU GHz Used: {rec['CPU GHz Used']}",
+        f"CPU GHz Free: {rec['CPU GHz Free']}",
+        f"Memory Capacity GB: {rec['Memory Capacity GB']}",
+        f"Memory Used GB: {rec['Memory Used GB']}",
+        f"Memory Free GB: {rec['Memory Free GB']}",
+        f"Disk Usage Avg KBps: {rec['Disk Usage Avg KBps']}",
+        f"Disk Usage Min KBps: {rec['Disk Usage Min KBps']}",
+        f"Disk Usage Max KBps: {rec['Disk Usage Max KBps']}",
+        f"Network Usage Avg KBps: {rec['Network Usage Avg KBps']}",
+        f"Network Usage Min KBps: {rec['Network Usage Min KBps']}",
+        f"Network Usage Max KBps: {rec['Network Usage Max KBps']}",
+        f"Memory Usage Avg perc: {rec['Memory Usage Avg perc']}",
+        f"Memory Usage Min perc: {rec['Memory Usage Min perc']}",
+        f"Memory Usage Max perc: {rec['Memory Usage Max perc']}",
+        f"CPU Usage Avg perc: {rec['CPU Usage Avg perc']}",
+        f"CPU Usage Min perc: {rec['CPU Usage Min perc']}",
+        f"CPU Usage Max perc: {rec['CPU Usage Max perc']}",
+        f"Total FreeSpace GB: {rec['Total FreeSpace GB']}",
+        f"Total Capacity GB: {rec['Total Capacity GB']}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------------------
-# HOST
+# Host performance metrics (eski vmware_host_performance_metrics.py)
 # ---------------------------------------------------------------------------
-def extract_host_hardware(host, vcenter_uuid, collection_timestamp, hierarchy):
-    """Eski vmware_host_collector.extract_host_hardware ile birebir."""
+def collect_host_metrics(identifier, cl_name, host, perf_mgr, cmap, start, end, interval):
+    """Eski host performance script ile birebir hesap ve label."""
+    system_uuid = getattr(host.config, 'uuid', 'N/A') if getattr(host, 'config', None) else 'N/A'
+    bios_uuid = getattr(host.hardware.systemInfo, 'uuid', 'N/A') if getattr(host, 'hardware', None) else 'N/A'
+
+    boot = getattr(host.runtime, 'bootTime', None) if getattr(host, 'runtime', None) else None
+    uptime = boot.strftime('%m/%d/%Y %H:%M:%S') if boot else 'N/A'
+
     hw = host.summary.hardware
-    sys_info = host.hardware.systemInfo
-    product = host.config.product
-
-    other_id_info = None
-    if hasattr(sys_info, 'otherIdentifyingInfo') and sys_info.otherIdentifyingInfo:
-        other_id_info = json.dumps([str(info) for info in sys_info.otherIdentifyingInfo])
-
-    return {
-        "data_type": "vmware_host_hardware",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": hierarchy.get('datacenter'),
-        "cluster_moid": hierarchy.get('cluster'),
-        "host_moid": host._moId,
-
-        "vendor": safe_get_attr(hw, 'vendor'),
-        "model": safe_get_attr(hw, 'model'),
-        "uuid": safe_get_attr(hw, 'uuid'),
-        "memory_size": safe_get_attr(hw, 'memorySize'),
-        "cpu_model": safe_get_attr(hw, 'cpuModel'),
-        "cpu_mhz": safe_get_attr(hw, 'cpuMhz'),
-        "num_cpu_pkgs": safe_get_attr(hw, 'numCpuPkgs'),
-        "num_cpu_cores": safe_get_attr(hw, 'numCpuCores'),
-        "num_cpu_threads": safe_get_attr(hw, 'numCpuThreads'),
-        "num_nics": safe_get_attr(hw, 'numNics'),
-        "num_hbas": safe_get_attr(hw, 'numHBAs'),
-
-        "system_info_vendor": safe_get_attr(sys_info, 'vendor'),
-        "system_info_model": safe_get_attr(sys_info, 'model'),
-        "system_info_uuid": safe_get_attr(sys_info, 'uuid'),
-        "system_info_other_identifying_info": other_id_info,
-
-        "product_name": safe_get_attr(product, 'name'),
-        "product_full_name": safe_get_attr(product, 'fullName'),
-        "product_vendor": safe_get_attr(product, 'vendor'),
-        "product_version": safe_get_attr(product, 'version'),
-        "product_build": safe_get_attr(product, 'build'),
-        "product_locale_version": safe_get_attr(product, 'localeVersion'),
-        "product_locale_build": safe_get_attr(product, 'localeBuild'),
-        "product_os_type": safe_get_attr(product, 'osType'),
-        "product_product_line_id": safe_get_attr(product, 'productLineId'),
-        "product_api_type": safe_get_attr(product, 'apiType'),
-        "product_api_version": safe_get_attr(product, 'apiVersion'),
-        "product_license_product_name": safe_get_attr(product, 'licenseProductName'),
-        "product_license_product_version": safe_get_attr(product, 'licenseProductVersion'),
-    }
-
-
-def extract_host_runtime(host, vcenter_uuid, collection_timestamp):
-    """Eski vmware_host_collector.extract_host_runtime ile birebir."""
-    runtime = host.runtime
     qs = host.summary.quickStats
-    config = host.summary.config
+    cpu_cap = (hw.numCpuCores * hw.cpuMhz) / 1000.0
+    cpu_used = (qs.overallCpuUsage or 0) / 1000.0
+    cpu_free = cpu_cap - cpu_used
+    mem_cap = hw.memorySize / (1024 ** 3)
+    mem_used = (qs.overallMemoryUsage or 0) / 1024.0
+    mem_free = mem_cap - mem_used
 
-    return {
-        "data_type": "vmware_host_runtime",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "host_moid": host._moId,
+    ds_list = getattr(host, 'datastore', []) or []
+    total_str_cap = sum(ds.summary.capacity for ds in ds_list) / (1024 ** 3)
+    total_str_free = sum(ds.summary.freeSpace for ds in ds_list) / (1024 ** 3)
 
-        "connection_state": safe_get_attr(runtime, 'connectionState'),
-        "power_state": safe_get_attr(runtime, 'powerState'),
-        "standby_mode": safe_get_attr(runtime, 'standbyMode'),
-        "in_maintenance_mode": safe_get_attr(runtime, 'inMaintenanceMode'),
-        "in_quarantine_mode": safe_get_attr(runtime, 'inQuarantineMode'),
-        "boot_time": safe_timestamp(safe_get_attr(runtime, 'bootTime')),
-        "health_system_runtime_system_health_info": str(safe_get_attr(runtime, 'healthSystemRuntime.systemHealthInfo')) if safe_get_attr(runtime, 'healthSystemRuntime.systemHealthInfo') else None,
-
-        "quick_stats_overall_cpu_usage": safe_get_attr(qs, 'overallCpuUsage'),
-        "quick_stats_overall_memory_usage": safe_get_attr(qs, 'overallMemoryUsage'),
-        "quick_stats_distributed_cpu_fairness": safe_get_attr(qs, 'distributedCpuFairness'),
-        "quick_stats_distributed_memory_fairness": safe_get_attr(qs, 'distributedMemoryFairness'),
-        "quick_stats_uptime": safe_get_attr(qs, 'uptime'),
-
-        "config_name": safe_get_attr(config, 'name'),
-        "config_port": safe_get_attr(config, 'port'),
-        "config_ssl_thumbprint": safe_get_attr(config, 'sslThumbprint'),
-    }
-
-
-def extract_host_storage(host, vcenter_uuid, collection_timestamp):
-    """Eski vmware_host_collector.extract_host_storage ile birebir (one row per datastore)."""
-    storage_records = []
-    if not host.datastore:
-        return storage_records
-
-    for ds in host.datastore:
-        storage_records.append({
-            "data_type": "vmware_host_storage",
-            "collection_timestamp": collection_timestamp,
-            "vcenter_uuid": vcenter_uuid,
-            "host_moid": host._moId,
-            "datastore_moid": ds._moId,
-
-            "datastore_name": safe_get_attr(ds, 'name'),
-            "datastore_url": safe_get_attr(ds, 'summary.url'),
-            "datastore_capacity": safe_get_attr(ds, 'summary.capacity'),
-            "datastore_free_space": safe_get_attr(ds, 'summary.freeSpace'),
-            "datastore_type": safe_get_attr(ds, 'summary.type'),
-            "datastore_accessible": safe_get_attr(ds, 'summary.accessible'),
-            "datastore_multiple_host_access": safe_get_attr(ds, 'summary.multipleHostAccess'),
-        })
-
-    return storage_records
-
-
-def host_perf_raw_from_query_result(host_moid, result_item, vcenter_uuid, collection_timestamp,
-                                    counter_info_map, start_time, interval_id):
-    """Eski vmware_host_collector.perf_raw_from_query_result ile birebir."""
-    perf_raw_records = []
-    if not result_item or not result_item.value:
-        return perf_raw_records
-    for perf_metric in result_item.value:
-        counter_id = perf_metric.id.counterId
-        instance = perf_metric.id.instance or ''
-        counter_info = counter_info_map.get(counter_id) or {
-            'name': f'counter_{counter_id}', 'group': 'unknown', 'name_short': 'unknown',
-            'rollup': 'unknown', 'stats_type': 'unknown', 'unit_key': 'unknown', 'unit_label': ''}
-        if not perf_metric.value:
-            continue
-        interval_seconds = interval_id
-        for i, value in enumerate(perf_metric.value):
-            sample_time = start_time + timedelta(seconds=i * interval_seconds)
-            perf_raw_records.append({
-                "data_type": "vmware_host_perf_raw",
-                "collection_timestamp": collection_timestamp,
-                "vcenter_uuid": vcenter_uuid,
-                "host_moid": host_moid,
-                "counter_id": counter_id,
-                "counter_name": counter_info['name'],
-                "counter_group": counter_info['group'],
-                "counter_name_short": counter_info['name_short'],
-                "counter_rollup_type": counter_info['rollup'],
-                "counter_stats_type": counter_info['stats_type'],
-                "counter_unit_key": counter_info['unit_key'],
-                "counter_unit_label": counter_info['unit_label'],
-                "instance": instance,
-                "sample_timestamp": sample_time.isoformat(),
-                "value": value,
-                "interval_id": interval_id,
-            })
-    return perf_raw_records
-
-
-def calculate_host_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, start_time, end_time):
-    """Eski vmware_host_collector.calculate_host_perf_agg ile birebir."""
-    perf_agg_records = []
-    grouped = {}
-    for record in perf_raw_records:
-        key = (record['counter_id'], record['instance'])
-        if key not in grouped:
-            grouped[key] = {
-                'values': [],
-                'counter_info': {
-                    'counter_name': record['counter_name'],
-                    'counter_group': record['counter_group'],
-                    'counter_rollup_type': record['counter_rollup_type'],
-                    'counter_unit_key': record['counter_unit_key'],
-                },
-                'host_moid': record['host_moid']
-            }
-        grouped[key]['values'].append(record['value'])
-
-    for (counter_id, instance), data in grouped.items():
-        values = data['values']
-        if not values:
-            continue
-        perf_agg_records.append({
-            "data_type": "vmware_host_perf_agg",
-            "collection_timestamp": collection_timestamp,
-            "vcenter_uuid": vcenter_uuid,
-            "host_moid": data['host_moid'],
-
-            "window_start": start_time.isoformat(),
-            "window_end": end_time.isoformat(),
-            "window_duration_seconds": int((end_time - start_time).total_seconds()),
-            "sample_count": len(values),
-
-            "counter_id": counter_id,
-            "counter_name": data['counter_info']['counter_name'],
-            "counter_group": data['counter_info']['counter_group'],
-            "counter_rollup_type": data['counter_info']['counter_rollup_type'],
-            "counter_unit_key": data['counter_info']['counter_unit_key'],
-            "instance": instance,
-
-            "value_avg": sum(values) / len(values),
-            "value_min": min(values),
-            "value_max": max(values),
-            "value_stddev": None,
-            "value_first": values[0],
-            "value_last": values[-1],
-        })
-    return perf_agg_records
-
-
-def process_one_host_config_only(host, hierarchy, vcenter_uuid, collection_timestamp):
-    """Eski vmware_host_collector.process_one_host_config_only ile birebir."""
-    records = []
     try:
-        records.append(extract_host_hardware(host, vcenter_uuid, collection_timestamp, hierarchy))
-        records.append(extract_host_runtime(host, vcenter_uuid, collection_timestamp))
-        records.extend(extract_host_storage(host, vcenter_uuid, collection_timestamp))
+        stats = query_metrics(perf_mgr, host, cmap, start, end, interval)
     except Exception as e:
-        print(f"Warning: Failed to process host {getattr(host, '_moId', '?')}: {e}", file=sys.stderr)
-    return host._moId, hierarchy, records
+        print(f"Warning: Host perf query failed for {host._moId}: {e}", file=sys.stderr)
+        stats = {}
 
+    rid = cmap['disk.read.average']['id']
+    wid = cmap['disk.write.average']['id']
+    disk_avg = stats.get(rid, {'avg': 0})['avg'] + stats.get(wid, {'avg': 0})['avg']
+    disk_min = stats.get(rid, {'min': 0})['min'] + stats.get(wid, {'min': 0})['min']
+    disk_max = stats.get(rid, {'max': 0})['max'] + stats.get(wid, {'max': 0})['max']
 
-# ---------------------------------------------------------------------------
-# VM
-# ---------------------------------------------------------------------------
-def extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy):
-    """Eski vmware_vm_collector.extract_vm_config ile birebir."""
-    config = vm.summary.config
-    vm_config = vm.config
+    nid = cmap['net.usage.average']['id']
+    net = stats.get(nid, {'avg': 0, 'min': 0, 'max': 0})
+
+    pid = cmap.get('power.power.average', {}).get('id')
+    power = stats.get(pid, {'avg': 0})['avg'] if pid else 'N/A'
+
+    mem_pct = stats.get(cmap['mem.usage.average']['id'], {'avg': 0, 'min': 0, 'max': 0})
+    cpu_pct = stats.get(cmap['cpu.usage.average']['id'], {'avg': 0, 'min': 0, 'max': 0})
 
     record = {
-        "data_type": "vmware_vm_config",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "datacenter_moid": hierarchy.get('datacenter'),
-        "cluster_moid": hierarchy.get('cluster'),
-        "host_moid": hierarchy.get('host'),
-        "vm_moid": vm._moId,
-
-        "name": safe_get_attr(config, 'name'),
-        "template": safe_get_attr(config, 'template'),
-        "vm_path_name": safe_get_attr(config, 'vmPathName'),
-        "memory_size_mb": safe_get_attr(config, 'memorySizeMB'),
-        "cpu_reservation": safe_get_attr(config, 'cpuReservation'),
-        "memory_reservation": safe_get_attr(config, 'memoryReservation'),
-        "num_cpu": safe_get_attr(config, 'numCpu'),
-        "num_ethernet_cards": safe_get_attr(config, 'numEthernetCards'),
-        "num_virtual_disks": safe_get_attr(config, 'numVirtualDisks'),
-        "uuid": safe_get_attr(config, 'uuid'),
-        "instance_uuid": safe_get_attr(config, 'instanceUuid'),
-        "guest_id": safe_get_attr(config, 'guestId'),
-        "guest_full_name": safe_get_attr(config, 'guestFullName'),
-        "annotation": safe_get_attr(config, 'annotation'),
-
-        "change_version": safe_get_attr(vm_config, 'changeVersion'),
-        "modified": safe_timestamp(safe_get_attr(vm_config, 'modified')),
-        "change_tracking_enabled": safe_get_attr(vm_config, 'changeTrackingEnabled'),
-        "firmware": safe_get_attr(vm_config, 'firmware'),
-        "max_mks_connections": safe_get_attr(vm_config, 'maxMksConnections'),
-        "guest_auto_lock_enabled": safe_get_attr(vm_config, 'guestAutoLockEnabled'),
-        "managed_by_extension_key": safe_get_attr(vm_config, 'managedBy.extensionKey'),
-        "managed_by_type": safe_get_attr(vm_config, 'managedBy.type'),
-        "version": safe_get_attr(vm_config, 'version'),
-
-        "folder_path": get_folder_path(vm),
+        "data_type": "vmware_host_performance_metrics",
+        "Datacenter": identifier,
+        "Cluster": cl_name,
+        "VMHost": host.name,
+        "Timestamp": start.strftime('%Y-%m-%d %H:%M'),
+        "ESXi System UUID": system_uuid,
+        "ESXi BIOS UUID": bios_uuid,
+        "CPU GHz Capacity": round(cpu_cap, 2),
+        "CPU GHz Used": round(cpu_used, 2),
+        "CPU GHz Free": round(cpu_free, 2),
+        "Memory Capacity GB": round(mem_cap, 2),
+        "Memory Used GB": round(mem_used, 2),
+        "Memory Free GB": round(mem_free, 2),
+        "Disk Usage Avg KBps": round(disk_avg, 2),
+        "Disk Usage Min KBps": round(disk_min, 2),
+        "Disk Usage Max KBps": round(disk_max, 2),
+        "Network Usage Avg KBps": round(net['avg'], 2),
+        "Network Usage Min KBps": round(net['min'], 2),
+        "Network Usage Max KBps": round(net['max'], 2),
+        "Memory Usage Avg perc": mem_pct['avg'],
+        "Memory Usage Min perc": mem_pct['min'],
+        "Memory Usage Max perc": mem_pct['max'],
+        "CPU Usage Avg perc": cpu_pct['avg'],
+        "CPU Usage Min perc": cpu_pct['min'],
+        "CPU Usage Max perc": cpu_pct['max'],
+        "Total CapacityGB": round(total_str_cap, 2),
+        "Total FreeSpaceGB": round(total_str_free, 2),
+        "Power Usage": power,
+        "Uptime": uptime,
     }
-    return serialize_record(record)
+    return record
 
 
-def extract_vm_runtime(vm, vcenter_uuid, collection_timestamp):
-    """Eski vmware_vm_collector.extract_vm_runtime ile birebir."""
-    runtime = vm.runtime
-    guest = vm.guest
-    qs = vm.summary.quickStats
+def host_record_to_text(rec):
+    """Eski host scripti formatında plain-text blok."""
+    lines = [
+        f"Datacenter: {rec['Datacenter']}",
+        f"Cluster:    {rec['Cluster']}",
+        f"VMHost:     {rec['VMHost']}",
+        f"Timestamp:  {rec['Timestamp']}",
+        f"ESXi System UUID: {rec['ESXi System UUID']}",
+        f"ESXi BIOS UUID:   {rec['ESXi BIOS UUID']}",
+        f"CPU GHz Capacity: {rec['CPU GHz Capacity']}",
+        f"CPU GHz Used:     {rec['CPU GHz Used']}",
+        f"CPU GHz Free:     {rec['CPU GHz Free']}",
+        f"Memory Capacity GB: {rec['Memory Capacity GB']}",
+        f"Memory Used GB:     {rec['Memory Used GB']}",
+        f"Memory Free GB:     {rec['Memory Free GB']}",
+        f"Disk Usage Avg KBps: {rec['Disk Usage Avg KBps']}",
+        f"Disk Usage Min KBps: {rec['Disk Usage Min KBps']}",
+        f"Disk Usage Max KBps: {rec['Disk Usage Max KBps']}",
+        f"Network Usage Avg KBps: {rec['Network Usage Avg KBps']}",
+        f"Network Usage Min KBps: {rec['Network Usage Min KBps']}",
+        f"Network Usage Max KBps: {rec['Network Usage Max KBps']}",
+        f"Memory Usage Avg perc: {rec['Memory Usage Avg perc']}",
+        f"Memory Usage Min perc: {rec['Memory Usage Min perc']}",
+        f"Memory Usage Max perc: {rec['Memory Usage Max perc']}",
+        f"CPU Usage Avg perc:    {rec['CPU Usage Avg perc']}",
+        f"CPU Usage Min perc:    {rec['CPU Usage Min perc']}",
+        f"CPU Usage Max perc:    {rec['CPU Usage Max perc']}",
+        f"Total CapacityGB:      {rec['Total CapacityGB']}",
+        f"Total FreeSpaceGB:     {rec['Total FreeSpaceGB']}",
+        f"Power Usage:            {rec['Power Usage']}",
+        f"Uptime:                 {rec['Uptime']}",
+    ]
+    return "\n".join(lines) + "\n"
 
-    offline_feature_req = None
-    if hasattr(runtime, 'offlineFeatureRequirement') and runtime.offlineFeatureRequirement:
-        offline_feature_req = json.dumps([str(f) for f in runtime.offlineFeatureRequirement])
 
-    feature_req = None
-    if hasattr(runtime, 'featureRequirement') and runtime.featureRequirement:
-        feature_req = json.dumps([str(f) for f in runtime.featureRequirement])
+# ---------------------------------------------------------------------------
+# VM performance metrics (eski vmware_vm_performance_metrics.py)
+# ---------------------------------------------------------------------------
+def collect_vm_metrics(dc_name, cluster_name, host_name, host_uuid, vm,
+                       perf_mgr, cmap, mids, start, end, interval):
+    """Eski VM performance script ile birebir hesap ve label."""
+    num_cpus = vm.summary.config.numCpu
+    esxi_system_uuid = host_uuid
+    total_cpu_capacity_mhz = 0  # eski script ile aynı, hardcoded 0
+    memory_size_mb = getattr(vm.summary.config, 'memorySizeMB', 0) or 0
+    total_mem_capacity_gb = memory_size_mb / 1024.0
+
+    vm_name = vm.summary.config.name
+    guest_os = vm.summary.config.guestFullName or ''
+
+    committed = getattr(vm.summary.storage, 'committed', 0) or 0
+    uncommitted = getattr(vm.summary.storage, 'uncommitted', 0) or 0
+    used_space_gb = committed / (1024 ** 3)
+    prov_space_gb = (committed + uncommitted) / (1024 ** 3)
+    ds_names = [ds.info.name for ds in vm.datastore] if vm.datastore else []
+    ds_list = ",".join(ds_names)
+
+    vmx = vm.summary.config.vmPathName or ''
+    try:
+        folder = vmx.split(']')[1].rsplit('/', 1)[0].lstrip('/')
+    except Exception:
+        folder = ''
+
+    moid = getattr(vm, '_moId', '')
+    inst_uuid = getattr(vm.config, 'instanceUuid', '') if getattr(vm, 'config', None) else ''
+    vm_uuid = f"VirtualMachine-{moid}:{inst_uuid}" if moid and inst_uuid else ''
+
+    boot = getattr(vm.runtime, 'bootTime', None)
+    boot_time = boot.strftime('%m/%d/%Y %H:%M:%S') if boot else ''
+
+    try:
+        stats = query_metrics(perf_mgr, vm, cmap, start, end, interval, mids=mids)
+    except Exception as e:
+        print(f"Warning: VM perf query failed for {vm._moId}: {e}", file=sys.stderr)
+        stats = {}
+
+    cpu_id = cmap['cpu.usage.average']['id']
+    cpu = stats.get(cpu_id, {'avg': 0, 'min': 0, 'max': 0})
+    mem_id = cmap['mem.usage.average']['id']
+    mem = stats.get(mem_id, {'avg': 0, 'min': 0, 'max': 0})
+    rid = cmap['disk.read.average']['id']
+    wid = cmap['disk.write.average']['id']
+    disk = {'avg': 0, 'min': 0, 'max': 0}
+    if rid in stats and wid in stats:
+        disk['avg'] = stats[rid]['avg'] + stats[wid]['avg']
+        disk['min'] = stats[rid]['min'] + stats[wid]['min']
+        disk['max'] = stats[rid]['max'] + stats[wid]['max']
 
     record = {
-        "data_type": "vmware_vm_runtime",
-        "collection_timestamp": collection_timestamp,
-        "vcenter_uuid": vcenter_uuid,
-        "vm_moid": vm._moId,
-
-        "power_state": safe_get_attr(runtime, 'powerState'),
-        "connection_state": safe_get_attr(runtime, 'connectionState'),
-        "boot_time": safe_timestamp(safe_get_attr(runtime, 'bootTime')),
-        "suspend_time": safe_timestamp(safe_get_attr(runtime, 'suspendTime')),
-        "suspend_interval": safe_get_attr(runtime, 'suspendInterval'),
-        "question": str(safe_get_attr(runtime, 'question')) if safe_get_attr(runtime, 'question') else None,
-        "memory_overhead": safe_get_attr(runtime, 'memoryOverhead'),
-        "max_cpu_usage": safe_get_attr(runtime, 'maxCpuUsage'),
-        "max_memory_usage": safe_get_attr(runtime, 'maxMemoryUsage'),
-        "num_mks_connections": safe_get_attr(runtime, 'numMksConnections'),
-        "record_replay_state": safe_get_attr(runtime, 'recordReplayState'),
-        "clean_power_off": safe_get_attr(runtime, 'cleanPowerOff'),
-        "need_secondary_reason": safe_get_attr(runtime, 'needSecondaryReason'),
-        "online_standby": safe_get_attr(runtime, 'onlineStandby'),
-        "min_required_evc_mode_key": safe_get_attr(runtime, 'minRequiredEVCModeKey'),
-        "consolidation_needed": safe_get_attr(runtime, 'consolidationNeeded'),
-        "offline_feature_requirement": offline_feature_req,
-        "feature_requirement": feature_req,
-
-        "guest_tools_status": safe_get_attr(guest, 'toolsStatus'),
-        "guest_tools_version": safe_get_attr(guest, 'toolsVersion'),
-        "guest_tools_version_status": safe_get_attr(guest, 'toolsVersionStatus'),
-        "guest_tools_running_status": safe_get_attr(guest, 'toolsRunningStatus'),
-        "guest_tools_version_status2": safe_get_attr(guest, 'toolsVersionStatus2'),
-        "guest_guest_id": safe_get_attr(guest, 'guestId'),
-        "guest_guest_family": safe_get_attr(guest, 'guestFamily'),
-        "guest_guest_full_name": safe_get_attr(guest, 'guestFullName'),
-        "guest_host_name": safe_get_attr(guest, 'hostName'),
-        "guest_ip_address": safe_get_attr(guest, 'ipAddress'),
-        "guest_guest_state": safe_get_attr(guest, 'guestState'),
-
-        "quick_stats_overall_cpu_usage": safe_get_attr(qs, 'overallCpuUsage'),
-        "quick_stats_overall_cpu_demand": safe_get_attr(qs, 'overallCpuDemand'),
-        "quick_stats_guest_memory_usage": safe_get_attr(qs, 'guestMemoryUsage'),
-        "quick_stats_host_memory_usage": safe_get_attr(qs, 'hostMemoryUsage'),
-        "quick_stats_guest_heartbeat_status": safe_get_attr(qs, 'guestHeartbeatStatus'),
-        "quick_stats_distributed_cpu_entitlement": safe_get_attr(qs, 'distributedCpuEntitlement'),
-        "quick_stats_distributed_memory_entitlement": safe_get_attr(qs, 'distributedMemoryEntitlement'),
-        "quick_stats_static_cpu_entitlement": safe_get_attr(qs, 'staticCpuEntitlement'),
-        "quick_stats_static_memory_entitlement": safe_get_attr(qs, 'staticMemoryEntitlement'),
-        "quick_stats_private_memory": safe_get_attr(qs, 'privateMemory'),
-        "quick_stats_shared_memory": safe_get_attr(qs, 'sharedMemory'),
-        "quick_stats_swapped_memory": safe_get_attr(qs, 'swappedMemory'),
-        "quick_stats_ballooned_memory": safe_get_attr(qs, 'balloonedMemory'),
-        "quick_stats_consumed_overhead_memory": safe_get_attr(qs, 'consumedOverheadMemory'),
-        "quick_stats_ft_log_bandwidth": safe_get_attr(qs, 'ftLogBandwidth'),
-        "quick_stats_ft_secondary_latency": safe_get_attr(qs, 'ftSecondaryLatency'),
-        "quick_stats_ft_latency_status": safe_get_attr(qs, 'ftLatencyStatus'),
-        "quick_stats_compressed_memory": safe_get_attr(qs, 'compressedMemory'),
-        "quick_stats_uptime_seconds": safe_get_attr(qs, 'uptimeSeconds'),
-        "quick_stats_ssd_swapped_memory": safe_get_attr(qs, 'ssdSwappedMemory'),
+        "data_type": "vmware_vm_performance_metrics",
+        "Datacenter": dc_name,
+        "Cluster": cluster_name,
+        "VMHost": host_name,
+        "VMName": vm_name,
+        "Timestamp": start.strftime('%Y-%m-%d %H:%M'),
+        "Number of CPUs": num_cpus,
+        "ESXi System UUID": esxi_system_uuid,
+        "Total CPU Capacity Mhz": total_cpu_capacity_mhz,
+        "Total Memory Capacity GB": float(f"{total_mem_capacity_gb:.2f}"),
+        "CPU Usage Avg Mhz": cpu['avg'],
+        "CPU Usage Min Mhz": cpu['min'],
+        "CPU Usage Max Mhz": cpu['max'],
+        "Memory Usage Avg perc": mem['avg'],
+        "Memory Usage Min perc": mem['min'],
+        "Memory Usage Max perc": mem['max'],
+        "Disk Usage Avg KBps": disk['avg'],
+        "Disk Usage Min KBps": disk['min'],
+        "Disk Usage Max KBps": disk['max'],
+        "Guest OS": guest_os,
+        "Datastore": ds_list,
+        "Used Space GB": float(f"{used_space_gb:.2f}"),
+        "Provisioned Space GB": float(f"{prov_space_gb:.2f}"),
+        "Folder": folder,
+        "UUID": vm_uuid,
+        "BootTime": boot_time,
     }
-    return serialize_record(record)
+    return record
 
 
-def extract_vm_storage(vm, vcenter_uuid, collection_timestamp):
-    """Eski vmware_vm_collector.extract_vm_storage ile birebir."""
-    storage_records = []
-    storage = vm.summary.storage
-
-    if not vm.datastore:
-        return storage_records
-
-    for ds in vm.datastore:
-        record = {
-            "data_type": "vmware_vm_storage",
-            "collection_timestamp": collection_timestamp,
-            "vcenter_uuid": vcenter_uuid,
-            "vm_moid": vm._moId,
-            "datastore_moid": ds._moId,
-
-            "datastore_name": safe_get_attr(ds, 'name'),
-            "datastore_url": safe_get_attr(ds, 'summary.url'),
-            "datastore_capacity": safe_get_attr(ds, 'summary.capacity'),
-            "datastore_free_space": safe_get_attr(ds, 'summary.freeSpace'),
-            "datastore_type": safe_get_attr(ds, 'summary.type'),
-            "datastore_accessible": safe_get_attr(ds, 'summary.accessible'),
-            "datastore_multiple_host_access": safe_get_attr(ds, 'summary.multipleHostAccess'),
-
-            "committed": safe_get_attr(storage, 'committed'),
-            "uncommitted": safe_get_attr(storage, 'uncommitted'),
-            "unshared": safe_get_attr(storage, 'unshared'),
-        }
-        storage_records.append(serialize_record(record))
-
-    return storage_records
-
-
-def vm_perf_raw_from_query_result(vm_moid, result_item, vcenter_uuid, collection_timestamp,
-                                  counter_info_map, start_time, interval_id):
-    """Eski vmware_vm_collector.vm_perf_raw_from_query_result ile birebir."""
-    perf_raw_records = []
-    if not result_item or not result_item.value:
-        return perf_raw_records
-    for perf_metric in result_item.value:
-        counter_id = perf_metric.id.counterId
-        instance = perf_metric.id.instance or ''
-        counter_info = counter_info_map.get(counter_id) or {
-            'name': f'counter_{counter_id}', 'group': 'unknown', 'name_short': 'unknown',
-            'rollup': 'unknown', 'stats_type': 'unknown', 'unit_key': 'unknown', 'unit_label': ''}
-        if not perf_metric.value:
-            continue
-        interval_seconds = interval_id
-        for i, value in enumerate(perf_metric.value):
-            sample_time = start_time + timedelta(seconds=i * interval_seconds)
-            record = {
-                "data_type": "vmware_vm_perf_raw",
-                "collection_timestamp": collection_timestamp,
-                "vcenter_uuid": vcenter_uuid,
-                "vm_moid": vm_moid,
-                "counter_id": counter_id,
-                "counter_name": counter_info['name'],
-                "counter_group": counter_info['group'],
-                "counter_name_short": counter_info['name_short'],
-                "counter_rollup_type": counter_info['rollup'],
-                "counter_stats_type": counter_info['stats_type'],
-                "counter_unit_key": counter_info['unit_key'],
-                "counter_unit_label": counter_info['unit_label'],
-                "instance": instance,
-                "sample_timestamp": sample_time.isoformat(),
-                "value": value,
-                "interval_id": interval_id,
-            }
-            perf_raw_records.append(serialize_record(record))
-    return perf_raw_records
-
-
-def calculate_vm_perf_agg(perf_raw_records, vcenter_uuid, collection_timestamp, start_time, end_time):
-    """Eski vmware_vm_collector.calculate_vm_perf_agg ile birebir."""
-    perf_agg_records = []
-    grouped = {}
-    for record in perf_raw_records:
-        key = (record['counter_id'], record['instance'])
-        if key not in grouped:
-            grouped[key] = {
-                'values': [],
-                'counter_info': {
-                    'counter_name': record['counter_name'],
-                    'counter_group': record['counter_group'],
-                    'counter_rollup_type': record['counter_rollup_type'],
-                    'counter_unit_key': record['counter_unit_key'],
-                },
-                'vm_moid': record['vm_moid']
-            }
-        grouped[key]['values'].append(record['value'])
-
-    for (counter_id, instance), data in grouped.items():
-        values = data['values']
-        if not values:
-            continue
-        record = {
-            "data_type": "vmware_vm_perf_agg",
-            "collection_timestamp": collection_timestamp,
-            "vcenter_uuid": vcenter_uuid,
-            "vm_moid": data['vm_moid'],
-
-            "window_start": start_time.isoformat(),
-            "window_end": end_time.isoformat(),
-            "window_duration_seconds": int((end_time - start_time).total_seconds()),
-            "sample_count": len(values),
-
-            "counter_id": counter_id,
-            "counter_name": data['counter_info']['counter_name'],
-            "counter_group": data['counter_info']['counter_group'],
-            "counter_rollup_type": data['counter_info']['counter_rollup_type'],
-            "counter_unit_key": data['counter_info']['counter_unit_key'],
-            "instance": instance,
-
-            "value_avg": sum(values) / len(values),
-            "value_min": min(values),
-            "value_max": max(values),
-            "value_stddev": None,
-            "value_first": values[0],
-            "value_last": values[-1],
-        }
-        perf_agg_records.append(serialize_record(record))
-    return perf_agg_records
-
-
-def process_one_vm_config_only(vm, hierarchy, vcenter_uuid, collection_timestamp):
-    """Eski vmware_vm_collector.process_one_vm_config_only ile birebir."""
-    records = []
-    try:
-        records.append(extract_vm_config(vm, vcenter_uuid, collection_timestamp, hierarchy))
-        records.append(extract_vm_runtime(vm, vcenter_uuid, collection_timestamp))
-        records.extend(extract_vm_storage(vm, vcenter_uuid, collection_timestamp))
-    except Exception as e:
-        print(f"Warning: Failed to process VM {getattr(vm, '_moId', '?')}: {e}", file=sys.stderr)
-    return vm._moId, hierarchy, records
+def vm_record_to_text(rec):
+    """Eski VM scripti formatında plain-text blok."""
+    lines = [
+        f"Datacenter: {rec['Datacenter']}",
+        f"Cluster: {rec['Cluster']}",
+        f"VMHost: {rec['VMHost']}",
+        f"VMName: {rec['VMName']}",
+        f"Timestamp: {rec['Timestamp']}",
+        f"Number of CPUs: {rec['Number of CPUs']}",
+        f"ESXi System UUID: {rec['ESXi System UUID']}",
+        f"Total CPU Capacity Mhz: {rec['Total CPU Capacity Mhz']}",
+        f"Total Memory Capacity GB: {rec['Total Memory Capacity GB']:.2f}",
+        f"CPU Usage Avg Mhz: {rec['CPU Usage Avg Mhz']}",
+        f"CPU Usage Min Mhz: {rec['CPU Usage Min Mhz']}",
+        f"CPU Usage Max Mhz: {rec['CPU Usage Max Mhz']}",
+        f"Memory Usage Avg perc: {rec['Memory Usage Avg perc']}",
+        f"Memory Usage Min perc: {rec['Memory Usage Min perc']}",
+        f"Memory Usage Max perc: {rec['Memory Usage Max perc']}",
+        f"Disk Usage Avg KBps: {rec['Disk Usage Avg KBps']}",
+        f"Disk Usage Min KBps: {rec['Disk Usage Min KBps']}",
+        f"Disk Usage Max KBps: {rec['Disk Usage Max KBps']}",
+        f"Guest OS: {rec['Guest OS']}",
+        f"Datastore: {rec['Datastore']}",
+        f"Used Space GB: {rec['Used Space GB']:.2f}",
+        f"Provisioned Space GB: {rec['Provisioned Space GB']:.2f}",
+        f"Folder: {rec['Folder']}",
+        f"UUID: {rec['UUID']}",
+        f"BootTime: {rec['BootTime']}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------------------
-# vCenter collection
+# Per-vCenter orchestration
 # ---------------------------------------------------------------------------
-def collect_vcenter(vc_host, cfg):
-    """Tek bir vCenter için tüm data_type'ları toplar."""
+def collect_vcenter(vc, cfg, start, end, interval):
+    """Tek bir vCenter için 4 data_type'ı toplar."""
     si = None
-    all_records = []
+    records = []
     try:
-        if cfg.timeout > 0:
-            socket.setdefaulttimeout(cfg.timeout)
-
-        print(f"vCenter bağlantısı kuruluyor: {vc_host}:{cfg.port} (user={cfg.username})", file=sys.stderr)
-        context = ssl._create_unverified_context()
+        print(f"vCenter bağlantısı kuruluyor: {vc}:{cfg.port} (user={cfg.username})", file=sys.stderr)
         si = SmartConnect(
-            host=vc_host,
-            user=cfg.username,
-            pwd=cfg.password,
-            port=cfg.port,
-            sslContext=context,
+            host=vc, user=cfg.username, pwd=cfg.password,
+            port=cfg.port, sslContext=ssl._create_unverified_context()
         )
-
         content = si.RetrieveContent()
-        vcenter_uuid = content.about.instanceUuid
         perf_mgr = content.perfManager
 
-        collection_timestamp = datetime.now(timezone.utc).isoformat()
-        end_time = datetime.now(timezone.utc)
-        start_time = end_time - timedelta(seconds=cfg.perf_window)
+        # Counter map'leri (host için power dahil; cluster/dc/vm için common)
+        host_cmap = get_perf_counter_map(perf_mgr, HOST_COUNTERS)
+        common_cmap = get_perf_counter_map(perf_mgr, COMMON_COUNTERS)
 
-        # Counter setleri (host: 6 counter; VM: 6 counter; cluster/datacenter aggregation host stats üzerinden)
-        host_desired = COMMON_PERF_COUNTERS + HOST_EXTRA_COUNTERS
-        vm_desired = COMMON_PERF_COUNTERS + HOST_EXTRA_COUNTERS
+        # VM tarafı için precomputed metric_ids (eski script ile birebir)
+        vm_mids = [vim.PerformanceManager.MetricId(counterId=v['id'], instance='*')
+                   for v in common_cmap.values()]
 
-        host_counter_ids, host_counter_info_map, host_scale_map, _ = build_counter_data(perf_mgr, host_desired)
-        vm_counter_ids, vm_counter_info_map, vm_scale_map, _ = build_counter_data(perf_mgr, vm_desired)
+        # Identifier'lar
+        # - Datacenter scope: socket fallback'lı (eski datacenter scripti)
+        # - Cluster/Host scope: vc fallback'lı (eski cluster/host scriptleri)
+        dc_identifier = get_vcenter_identifier(content, vc, use_socket_fallback=True)
+        cl_host_identifier = get_vcenter_identifier(content, vc, use_socket_fallback=False)
 
-        host_metric_ids = [vim.PerformanceManager.MetricId(counterId=cid, instance='*') for cid in host_counter_ids]
-        vm_metric_ids = [vim.PerformanceManager.MetricId(counterId=cid, instance='*') for cid in vm_counter_ids]
+        # 1) Datacenter performance (vCenter-level aggregate, tek record)
+        try:
+            dc_rec = collect_datacenter_metrics(
+                content, dc_identifier, perf_mgr, common_cmap, start, end, interval
+            )
+            records.append(dc_rec)
+        except Exception as e:
+            print(f"Warning: Datacenter metrics failed for {vc}: {e}", file=sys.stderr)
 
-        # Hierarchy walk
-        datacenters = []
+        # Cluster/Host/VM iterasyonu
+        cluster_jobs = []  # (cl, identifier, dc_name)
+        host_jobs = []     # (identifier, cl_name, host)
+        vm_jobs = []       # (dc_name, cl_name, host_name, host_uuid, vm)
+
         for dc in content.rootFolder.childEntity:
             if not hasattr(dc, 'hostFolder'):
                 continue
-            datacenters.append(dc)
-
-        # Datacenter config (her zaman yayınlanır)
-        for dc in datacenters:
-            all_records.append(extract_datacenter_config(dc, vcenter_uuid, collection_timestamp))
-
-        # Cluster + host + vm job listeleri
-        host_jobs = []   # (host, hierarchy)
-        vm_jobs = []     # (vm, hierarchy)
-        clusters_by_dc = {}  # dc_moid -> [cluster]
-
-        for dc in datacenters:
-            dc_moid = dc._moId
-            clusters_by_dc[dc_moid] = []
-            for entity in dc.hostFolder.childEntity:
-                if not isinstance(entity, vim.ClusterComputeResource):
+            for cl in dc.hostFolder.childEntity:
+                if not isinstance(cl, vim.ClusterComputeResource):
                     continue
-                clusters_by_dc[dc_moid].append(entity)
-                cluster_moid = entity._moId
-
-                for host in entity.host:
-                    host_hierarchy = {'datacenter': dc_moid, 'cluster': cluster_moid}
-                    host_jobs.append((host, host_hierarchy))
-
-                    host_moid = host._moId
+                cluster_jobs.append((cl, cl_host_identifier))
+                for host in cl.host:
+                    host_jobs.append((cl_host_identifier, cl.name, host))
+                    host_uuid = 'N/A'
+                    try:
+                        host_uuid = getattr(host.hardware.systemInfo, 'uuid', 'N/A')
+                    except Exception:
+                        pass
                     for vm in host.vm:
                         try:
-                            if getattr(vm.config, 'template', False):
+                            if vm.config.template:
                                 continue
                         except Exception:
                             continue
-                        vm_hierarchy = {
-                            'datacenter': dc_moid,
-                            'cluster': cluster_moid,
-                            'host': host_moid,
-                        }
-                        vm_jobs.append((vm, vm_hierarchy))
-                        if cfg.max_vms > 0 and len(vm_jobs) >= cfg.max_vms:
-                            break
-                    if cfg.max_vms > 0 and len(vm_jobs) >= cfg.max_vms:
-                        break
-                    if cfg.max_hosts > 0 and len(host_jobs) >= cfg.max_hosts:
-                        break
-                if cfg.max_hosts > 0 and len(host_jobs) >= cfg.max_hosts:
-                    break
+                        vm_jobs.append((dc.name, cl.name, host.name, host_uuid, vm))
 
-        if cfg.max_hosts > 0:
-            print(f"Limiting to first {len(host_jobs)} hosts (--max-hosts={cfg.max_hosts})", file=sys.stderr)
-        if cfg.max_vms > 0:
-            print(f"Limiting to first {len(vm_jobs)} VMs (--max-vms={cfg.max_vms})", file=sys.stderr)
-
-        print(f"vCenter {vc_host}: {len(datacenters)} DC, "
-              f"{sum(len(v) for v in clusters_by_dc.values())} cluster, "
-              f"{len(host_jobs)} host, {len(vm_jobs)} vm", file=sys.stderr)
-
-        # ---------- Phase 1a: parallel host config ----------
-        host_config_results = []
-        if host_jobs:
-            with ThreadPoolExecutor(max_workers=cfg.max_workers) as executor:
-                futures = [
-                    executor.submit(process_one_host_config_only, h, hier, vcenter_uuid, collection_timestamp)
-                    for (h, hier) in host_jobs
-                ]
-                try:
-                    completion = as_completed(futures, timeout=cfg.timeout if cfg.timeout > 0 else None)
-                    for f in completion:
-                        host_config_results.append(f.result())
-                except FuturesTimeoutError:
-                    print("Timeout reached in host phase 1; outputting partial results.", file=sys.stderr)
-
-        # ---------- Phase 1b: parallel VM config ----------
-        vm_config_results = []
-        if vm_jobs:
-            with ThreadPoolExecutor(max_workers=cfg.max_workers) as executor:
-                futures = [
-                    executor.submit(process_one_vm_config_only, vm, hier, vcenter_uuid, collection_timestamp)
-                    for (vm, hier) in vm_jobs
-                ]
-                try:
-                    completion = as_completed(futures, timeout=cfg.timeout if cfg.timeout > 0 else None)
-                    for f in completion:
-                        vm_config_results.append(f.result())
-                except FuturesTimeoutError:
-                    print("Timeout reached in VM phase 1; outputting partial results.", file=sys.stderr)
-
-        # ---------- Phase 2a: batch QueryPerf for hosts ----------
-        batch_size = max(1, min(cfg.perf_batch_size, 64))
-        hosts = [j[0] for j in host_jobs]
-        host_perf_by_moid = {}        # host_moid -> (perf_raw_list, perf_agg_list)
-        host_scaled_by_moid = {}      # host_moid -> {counter_id: {avg,min,max}}
-
-        for i in range(0, len(hosts), batch_size):
-            batch = hosts[i:i + batch_size]
-            specs = [
-                vim.PerformanceManager.QuerySpec(
-                    entity=h,
-                    metricId=host_metric_ids,
-                    startTime=start_time,
-                    endTime=end_time,
-                    intervalId=cfg.perf_interval,
-                )
-                for h in batch
+        # 2) Cluster performance — paralel
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            futures = [
+                ex.submit(collect_cluster_metrics, ident, cl, perf_mgr, common_cmap, start, end, interval)
+                for (cl, ident) in cluster_jobs
             ]
-            try:
-                results = perf_mgr.QueryPerf(querySpec=specs)
-                for j, res in enumerate(results):
-                    if j >= len(batch):
-                        break
-                    host_moid = batch[j]._moId
-                    perf_raw = host_perf_raw_from_query_result(
-                        host_moid, res, vcenter_uuid, collection_timestamp,
-                        host_counter_info_map, start_time, cfg.perf_interval,
-                    )
-                    perf_agg = calculate_host_perf_agg(
-                        perf_raw, vcenter_uuid, collection_timestamp, start_time, end_time,
-                    )
-                    host_perf_by_moid[host_moid] = (perf_raw, perf_agg)
-                    host_scaled_by_moid[host_moid] = extract_scaled_stats(res, host_scale_map)
-            except Exception as e:
-                print(f"Warning: Batch QueryPerf failed for host batch at index {i}: {e}", file=sys.stderr)
-                for h in batch:
-                    host_perf_by_moid[h._moId] = ([], [])
-                    host_scaled_by_moid[h._moId] = {}
-
-        # ---------- Phase 2b: batch QueryPerf for VMs ----------
-        vms = [j[0] for j in vm_jobs]
-        vm_perf_by_moid = {}
-
-        for i in range(0, len(vms), batch_size):
-            batch = vms[i:i + batch_size]
-            specs = [
-                vim.PerformanceManager.QuerySpec(
-                    entity=vm,
-                    metricId=vm_metric_ids,
-                    startTime=start_time,
-                    endTime=end_time,
-                    intervalId=cfg.perf_interval,
-                )
-                for vm in batch
-            ]
-            try:
-                results = perf_mgr.QueryPerf(querySpec=specs)
-                for j, res in enumerate(results):
-                    if j >= len(batch):
-                        break
-                    vm_moid = batch[j]._moId
-                    perf_raw = vm_perf_raw_from_query_result(
-                        vm_moid, res, vcenter_uuid, collection_timestamp,
-                        vm_counter_info_map, start_time, cfg.perf_interval,
-                    )
-                    perf_agg = calculate_vm_perf_agg(
-                        perf_raw, vcenter_uuid, collection_timestamp, start_time, end_time,
-                    )
-                    vm_perf_by_moid[vm_moid] = (perf_raw, perf_agg)
-            except Exception as e:
-                print(f"Warning: Batch QueryPerf failed for VM batch at index {i}: {e}", file=sys.stderr)
-                for vm in batch:
-                    vm_perf_by_moid[vm._moId] = ([], [])
-
-        # ---------- Output: host records (config + perf_raw + perf_agg) ----------
-        for host_moid, hierarchy, recs in host_config_results:
-            all_records.extend(recs)
-            raw, agg = host_perf_by_moid.get(host_moid, ([], []))
-            all_records.extend(raw)
-            all_records.extend(agg)
-
-        # ---------- Output: vm records (config + perf_raw + perf_agg) ----------
-        for vm_moid, hierarchy, recs in vm_config_results:
-            all_records.extend(recs)
-            raw, agg = vm_perf_by_moid.get(vm_moid, ([], []))
-            all_records.extend(raw)
-            all_records.extend(agg)
-
-        # ---------- Cluster config + cluster_metrics_agg ----------
-        for dc in datacenters:
-            dc_moid = dc._moId
-            for cluster in clusters_by_dc.get(dc_moid, []):
+            for f in as_completed(futures):
                 try:
-                    all_records.append(extract_cluster_config(
-                        cluster, vcenter_uuid, collection_timestamp, dc_moid
-                    ))
-                    all_records.append(calculate_cluster_metrics_agg(
-                        cluster, vcenter_uuid, dc_moid, collection_timestamp,
-                        host_scaled_by_moid, host_scale_map,
-                        start_time, end_time,
-                    ))
+                    records.append(f.result())
                 except Exception as e:
-                    print(f"Warning: Cluster {getattr(cluster, '_moId', '?')} aggregation failed: {e}", file=sys.stderr)
+                    print(f"Warning: Cluster metrics task failed: {e}", file=sys.stderr)
 
-        # ---------- Datacenter metrics_agg ----------
-        for dc in datacenters:
-            try:
-                cluster_objs = clusters_by_dc.get(dc._moId, [])
-                all_records.append(calculate_datacenter_metrics_agg(
-                    dc, vcenter_uuid, collection_timestamp,
-                    cluster_objs, host_scaled_by_moid, host_scale_map,
-                    start_time, end_time,
-                ))
-            except Exception as e:
-                print(f"Warning: Datacenter {getattr(dc, '_moId', '?')} aggregation failed: {e}", file=sys.stderr)
+        # 3) Host performance — paralel (32 worker, eski script ile aynı)
+        with ThreadPoolExecutor(max_workers=32) as ex:
+            futures = [
+                ex.submit(collect_host_metrics, ident, cl_name, host, perf_mgr, host_cmap, start, end, interval)
+                for (ident, cl_name, host) in host_jobs
+            ]
+            for f in as_completed(futures):
+                try:
+                    records.append(f.result())
+                except Exception as e:
+                    print(f"Warning: Host metrics task failed: {e}", file=sys.stderr)
 
-        return all_records
+        # 4) VM performance — paralel (32 worker, eski script ile aynı)
+        with ThreadPoolExecutor(max_workers=32) as ex:
+            futures = [
+                ex.submit(collect_vm_metrics,
+                          dc_name, cl_name, host_name, host_uuid, vm,
+                          perf_mgr, common_cmap, vm_mids, start, end, interval)
+                for (dc_name, cl_name, host_name, host_uuid, vm) in vm_jobs
+            ]
+            for f in as_completed(futures):
+                try:
+                    records.append(f.result())
+                except Exception as e:
+                    print(f"Warning: VM metrics task failed: {e}", file=sys.stderr)
+
+        print(f"vCenter {vc}: {len(records)} record toplandı", file=sys.stderr)
+        return records
 
     finally:
         if si:
             try:
                 Disconnect(si)
             except Exception as e:
-                print(f"Warning: Disconnect failed for {vc_host}: {e}", file=sys.stderr)
+                print(f"Warning: Disconnect failed for {vc}: {e}", file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# Output writers
+# ---------------------------------------------------------------------------
+def emit_json(all_records):
+    print(json.dumps(all_records, ensure_ascii=False, default=str))
+
+
+def emit_text(all_records):
+    """data_type'a göre eski scriptlerin plain-text format'ında basar."""
+    for rec in all_records:
+        dt = rec.get('data_type')
+        if dt == 'vmware_datacenter_performance_metrics':
+            sys.stdout.write(datacenter_record_to_text(rec) + "\n")
+        elif dt == 'vmware_cluster_performance_metrics':
+            sys.stdout.write(cluster_record_to_text(rec) + "\n")
+        elif dt == 'vmware_host_performance_metrics':
+            sys.stdout.write(host_record_to_text(rec) + "\n")
+        elif dt == 'vmware_vm_performance_metrics':
+            sys.stdout.write(vm_record_to_text(rec) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -1385,21 +930,26 @@ def main():
     print_config_summary(cfg)
     print(f"Toplam {len(cfg.vcenters)} vCenter işlenecek", file=sys.stderr)
 
+    start, end = round_interval()
+    interval = 300
+
     all_records = []
     for vc in cfg.vcenters:
         try:
-            records = collect_vcenter(vc, cfg)
-            print(f"vCenter {vc}: {len(records)} record toplandı", file=sys.stderr)
+            records = collect_vcenter(vc, cfg, start, end, interval)
             all_records.extend(records)
         except Exception as e:
             print(f"ERROR: vCenter collection failed for {vc}: {e}", file=sys.stderr)
             continue
 
-    print(f"Toplam {len(all_records)} record stdout'a yazılıyor", file=sys.stderr)
+    print(f"Toplam {len(all_records)} record stdout'a yazılıyor (format={cfg.output_format})", file=sys.stderr)
     try:
-        print(json.dumps(all_records, ensure_ascii=False, default=str))
+        if cfg.output_format == 'text':
+            emit_text(all_records)
+        else:
+            emit_json(all_records)
     except Exception as e:
-        print(f"ERROR: JSON serialization failed: {e}", file=sys.stderr)
+        print(f"ERROR: output write failed: {e}", file=sys.stderr)
         sys.exit(1)
 
 
