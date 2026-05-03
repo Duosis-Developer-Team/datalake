@@ -1,23 +1,26 @@
+\restrict kdScg80fcWCV2ib4den8SI0pa2KzDddINCxppJkLp0rTfesYmwA3fWyDBqkbukJ
 CREATE TABLE public.ibm_vios_network_virtual (
-	servername varchar(255) NULL,
-	viosname varchar(255) NULL,
-	"location" varchar(255) NULL,
-	vswitchid int4 NULL,
-	vlanid int4 NULL,
-	physicallocation varchar(255) NULL,
-	isportvlanid bool NULL,
-	receivedpackets float8 NULL,
-	sentpackets float8 NULL,
-	droppedpackets float8 NULL,
-	sentbytes float8 NULL,
-	receivedbytes float8 NULL,
-	receivedphysicalpackets float8 NULL,
-	sentphysicalpackets float8 NULL,
-	droppedphysicalpackets float8 NULL,
-	sentphysicalbytes float8 NULL,
-	receivedphysicalbytes float8 NULL,
-	transferredbytes float8 NULL,
-	transferredphysicalbytes float8 NULL,
-	"time" timestamptz NULL,
-	CONSTRAINT unique_ibm_vios_network_virtual_metric_entry UNIQUE (viosname, vswitchid, vlanid, "time")
+    servername character varying(255),
+    viosname character varying(255),
+    location character varying(255),
+    vswitchid integer,
+    vlanid integer,
+    physicallocation character varying(255),
+    isportvlanid boolean,
+    receivedpackets double precision,
+    sentpackets double precision,
+    droppedpackets double precision,
+    sentbytes double precision,
+    receivedbytes double precision,
+    receivedphysicalpackets double precision,
+    sentphysicalpackets double precision,
+    droppedphysicalpackets double precision,
+    sentphysicalbytes double precision,
+    receivedphysicalbytes double precision,
+    transferredbytes double precision,
+    transferredphysicalbytes double precision,
+    "time" timestamp with time zone
 );
+ALTER TABLE ONLY public.ibm_vios_network_virtual
+    ADD CONSTRAINT unique_ibm_vios_network_virtual_metric_entry UNIQUE (viosname, vswitchid, vlanid, "time");
+\unrestrict kdScg80fcWCV2ib4den8SI0pa2KzDddINCxppJkLp0rTfesYmwA3fWyDBqkbukJ

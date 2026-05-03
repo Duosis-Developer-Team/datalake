@@ -1,13 +1,25 @@
+\restrict 59MtsfHhdVDweYCp5FiDlVGdhq0ZCPF6fnhujt4CARu9U1nW7hwkwkYe1WNbCXF
 CREATE TABLE public.discovery_nutanix_inventory_prism (
-	id varchar DEFAULT nextval('discovery_nutanix_inventory_prism_id_seq'::regclass) NOT NULL,
-	first_observed timestamptz DEFAULT CURRENT_TIMESTAMP NULL,
-	last_observed timestamptz DEFAULT CURRENT_TIMESTAMP NULL,
-	nutanix_uuid varchar(255) NULL,
-	data_type varchar(50) NULL,
-	component_moid varchar(255) NULL,
-	"name" text NULL,
-	status varchar(20) NULL,
-	status_description text NULL,
-	CONSTRAINT discovery_nutanix_inventory_prism_pkey PRIMARY KEY (id),
-	CONSTRAINT uniq_prism_moid UNIQUE (component_moid)
+    id character varying NOT NULL,
+    first_observed timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    last_observed timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    nutanix_uuid character varying(255),
+    data_type character varying(50),
+    component_moid character varying(255),
+    name text,
+    status character varying(20),
+    status_description text
 );
+CREATE SEQUENCE public.discovery_nutanix_inventory_prism_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE public.discovery_nutanix_inventory_prism_id_seq OWNED BY public.discovery_nutanix_inventory_prism.id;
+ALTER TABLE ONLY public.discovery_nutanix_inventory_prism ALTER COLUMN id SET DEFAULT nextval('public.discovery_nutanix_inventory_prism_id_seq'::regclass);
+ALTER TABLE ONLY public.discovery_nutanix_inventory_prism
+    ADD CONSTRAINT discovery_nutanix_inventory_prism_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.discovery_nutanix_inventory_prism
+    ADD CONSTRAINT uniq_prism_moid UNIQUE (component_moid);
+\unrestrict 59MtsfHhdVDweYCp5FiDlVGdhq0ZCPF6fnhujt4CARu9U1nW7hwkwkYe1WNbCXF

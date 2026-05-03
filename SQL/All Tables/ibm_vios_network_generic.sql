@@ -1,16 +1,21 @@
+\restrict Y3UkaJCCyrmaowDuJrCyv9kLft0NZpUME0DENdMldw93uRUlJcjf0mp64wJSy0V
 CREATE TABLE public.ibm_vios_network_generic (
-	servername varchar(255) NULL,
-	viosname varchar(255) NULL,
-	id varchar(255) NULL,
-	"location" varchar(255) NULL,
-	"type" varchar(255) NULL,
-	physicallocation varchar(255) NULL,
-	receivedpackets float8 NULL,
-	sentpackets float8 NULL,
-	droppedpackets float8 NULL,
-	sentbytes float8 NULL,
-	receivedbytes float8 NULL,
-	transferredbytes float8 NULL,
-	"time" timestamptz NULL,
-	CONSTRAINT unique_ibm_vios_network_generic_metric_entry UNIQUE (viosname, id, "time")
+    servername character varying(255),
+    viosname character varying(255),
+    id character varying(255),
+    location character varying(255),
+    type character varying(255),
+    physicallocation character varying(255),
+    receivedpackets double precision,
+    sentpackets double precision,
+    droppedpackets double precision,
+    sentbytes double precision,
+    receivedbytes double precision,
+    transferredbytes double precision,
+    "time" timestamp with time zone NOT NULL
 );
+ALTER TABLE ONLY public.ibm_vios_network_generic
+    ADD CONSTRAINT ibm_vios_network_generic_viosname_id_time_key UNIQUE (viosname, id, "time");
+CREATE INDEX ibm_vios_network_generic_time_idx ON public.ibm_vios_network_generic USING btree ("time" DESC);
+CREATE TRIGGER ts_insert_blocker BEFORE INSERT ON public.ibm_vios_network_generic FOR EACH ROW EXECUTE FUNCTION _timescaledb_functions.insert_blocker();
+\unrestrict Y3UkaJCCyrmaowDuJrCyv9kLft0NZpUME0DENdMldw93uRUlJcjf0mp64wJSy0V
