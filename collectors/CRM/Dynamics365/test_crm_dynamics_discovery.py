@@ -13,9 +13,11 @@ Tests cover:
 - 429 / 5xx retry behavior (session-level, via mock)
 - data_type and UPSERT key contract for every supported entity
 """
+import io
 import json
 import sys
 import unittest
+from contextlib import redirect_stderr
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
@@ -520,6 +522,18 @@ class TestFixtureProducts(unittest.TestCase):
         for raw in self.records[:20]:
             rec = mod.normalize_product(raw, COLLECTION_TIME_MS)
             self.assertIsNotNone(rec.get("productid"))
+
+
+class TestStderrHistogram(unittest.TestCase):
+    def test_emit_histogram_zero_fills_known_types(self):
+        recs = [{"data_type": "crm_inventory_account", "k": 1}]
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            mod._stderr_emit_histogram(recs, verbose=False)
+        out = buf.getvalue()
+        self.assertIn("stdout_json_array_length=1", out)
+        self.assertIn("crm_inventory_account=1", out)
+        self.assertIn("crm_inventory_productpricelevel=0", out)
 
 
 class TestFixturePriceLevels(unittest.TestCase):

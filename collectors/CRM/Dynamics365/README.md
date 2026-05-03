@@ -170,11 +170,37 @@ python3 crm-dynamics-discovery.py \
   | python3 -m json.tool | head -50
 ```
 
+**Stderr histogram (every run):** After all fetches, the script writes one `[INFO] crm-dynamics-discovery: stdout_json_array_length=…` line to **stderr** listing counts for each of the six `data_type` values (zeros included). Check NiFi / container logs for this line — if `crm_inventory_productpricelevel=0` while `analyze_scripts/crm_productpricelevel_analyze.py` shows hundreds of OData rows, the process is likely started with **`--skip-catalog`** or a **different app registration** than the one used for the analyze script (403 on `productpricelevels` yields an empty OData list and a `[WARN] 403` line).
+
+**Deep fetch logging:** Add `--verbose-fetch` to log per-entity `odata_rows` vs `emitted` on stderr (confirms whether the Web API returned rows before normalization).
+
+**Quick catalog-only JSON check:**
+
+```bash
+python3 crm-dynamics-discovery.py ... --skip-accounts --skip-sales --full-snapshot 2>crm-stats.log | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for x in d if x.get('data_type')=='crm_inventory_productpricelevel'))"
+```
+
+## Diagnostic: product price levels (empty table troubleshooting)
+
+When `discovery_crm_productpricelevels` stays empty, use the analyze helper (full pagination, field coverage vs DDL, optional collector normalization preview):
+
+```bash
+cd datalake/collectors/CRM/Dynamics365/analyze_scripts
+python3 crm_productpricelevel_analyze.py \
+  --tenant-id "<TENANT_ID>" \
+  --client-id "<CLIENT_ID>" \
+  --client-secret "<SECRET>" \
+  --crm-url "https://<org>.crm4.dynamics.com" \
+  --show-sample
+```
+
+Optional: `--save-raw ./out/` writes `raw_catalog_productpricelevels.json` and `raw_catalog_pricelevels.json`. If OData returns rows but the DB table is still empty, verify NiFi `RouteOnAttribute` includes `crm_inventory_productpricelevel` (see `datalake/SQL/CRM/NiFi-productpricelevel-fix.md`).
+
 ## Unit tests
 
 ```bash
 cd datalake/collectors/CRM/Dynamics365
-python3 -m pytest test_crm_dynamics_discovery.py -v
+python3 -m pytest test_crm_dynamics_discovery.py test_crm_productpricelevel_analyze.py -v
 ```
 
 ## References

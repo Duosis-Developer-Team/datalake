@@ -1,19 +1,22 @@
+\restrict QkQeCKXwtdKa0HEMFfVZvsdTMvKllYxxBww04YVhypJvwkoeH47qWNPk2KfBCAH
 CREATE TABLE public.raw_zerto_alert_metrics (
-	data_type varchar(50) NOT NULL,
-	collection_timestamp timestamptz NOT NULL,
-	zerto_host varchar(50) DEFAULT ''::character varying NOT NULL,
-	id varchar(255) NOT NULL,
-	alert_identifier varchar(255) NULL,
-	title varchar(500) NULL,
-	description text NULL,
-	severity varchar(50) NULL,
-	category varchar(100) NULL,
-	creation_date timestamptz NULL,
-	site_identifier varchar(255) NULL,
-	vpg_identifier varchar(255) NULL,
-	is_acknowledged bool NULL,
-	is_resolved bool NULL,
-	related_entities jsonb NULL,
-	tags jsonb NULL,
-	CONSTRAINT zerto_alert_metrics_pkey PRIMARY KEY (id, collection_timestamp)
+    data_type character varying(50) NOT NULL,
+    collection_timestamp timestamp with time zone NOT NULL,
+    zerto_host character varying(50) DEFAULT ''::character varying NOT NULL,
+    id character varying(255) NOT NULL,
+    alert_identifier character varying(255),
+    title character varying(500),
+    description text,
+    severity character varying(50),
+    category character varying(100),
+    creation_date timestamp with time zone,
+    site_identifier character varying(255),
+    vpg_identifier character varying(255),
+    is_acknowledged boolean,
+    is_resolved boolean,
+    related_entities jsonb,
+    tags jsonb
 );
+ALTER TABLE ONLY public.raw_zerto_alert_metrics
+    ADD CONSTRAINT zerto_alert_metrics_pkey PRIMARY KEY (id, collection_timestamp);
+\unrestrict QkQeCKXwtdKa0HEMFfVZvsdTMvKllYxxBww04YVhypJvwkoeH47qWNPk2KfBCAH

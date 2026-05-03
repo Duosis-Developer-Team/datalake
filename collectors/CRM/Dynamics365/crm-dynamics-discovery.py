@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -297,6 +298,43 @@ def sparse_record(rec: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in rec.items() if v is not None}
 
 
+# Order matches NiFi RouteOnAttribute checklist (SQL/CRM/NiFi-scope-note.md).
+CRM_DATA_TYPES_ORDERED: List[str] = [
+    "crm_inventory_account",
+    "crm_inventory_product",
+    "crm_inventory_pricelevel",
+    "crm_inventory_productpricelevel",
+    "crm_inventory_salesorder",
+    "crm_inventory_salesorderdetail",
+]
+
+
+def _stderr_fetch_summary(entity: str, odata_rows: int, emitted: int) -> None:
+    """One line per OData entity — use NiFi / container logs to compare with DB row counts."""
+    sys.stderr.write(
+        f"[INFO] crm-dynamics-discovery: {entity} odata_rows={odata_rows} emitted={emitted}\n"
+    )
+
+
+def _stderr_emit_histogram(records: List[Dict[str, Any]], verbose: bool) -> None:
+    """
+    Always emit a compact histogram to stderr so operators can confirm each data_type
+    is present without parsing the single-line stdout JSON array.
+    """
+    dc = Counter((r.get("data_type") or "missing_data_type") for r in records)
+    parts = [f"{t}={dc.get(t, 0)}" for t in CRM_DATA_TYPES_ORDERED]
+    miss = dc.get("missing_data_type", 0)
+    extra = ""
+    if miss:
+        extra = f" missing_data_type={miss}"
+    sys.stderr.write(
+        f"[INFO] crm-dynamics-discovery: stdout_json_array_length={len(records)} "
+        f"{' '.join(parts)}{extra}\n"
+    )
+    if verbose:
+        sys.stderr.write(f"[INFO] crm-dynamics-discovery: data_type_histogram_full={dict(dc)}\n")
+
+
 # ---------------------------------------------------------------------------
 # Normalizers — one per entity (6 data_types)
 # ---------------------------------------------------------------------------
@@ -538,6 +576,14 @@ def parse_args() -> argparse.Namespace:
         "--debug-token", action="store_true",
         help="Print decoded JWT claims and request details to stderr (diagnostic only)."
     )
+    parser.add_argument(
+        "--verbose-fetch", action="store_true",
+        help=(
+            "After each OData entity fetch, log odata_rows vs emitted JSON objects to stderr; "
+            "also log full Counter keys if any unexpected data_type appears. "
+            "Use when crm_inventory_productpricelevel is missing from stdout but analyze_scripts succeeds."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -569,45 +615,69 @@ def main() -> None:
 
     records: List[Dict[str, Any]] = []
 
+    verbose_fetch = args.verbose_fetch
+
     # --- Master: Accounts (no incremental filter — always full snapshot) ---
     if not args.skip_accounts:
-        for item in fetch_paginated(session, f"{api_base}accounts", ACTIVE_ACCOUNT_FILTER, timeout):
+        account_items = fetch_paginated(session, f"{api_base}accounts", ACTIVE_ACCOUNT_FILTER, timeout)
+        acc_emitted = 0
+        for item in account_items:
             if not isinstance(item, dict):
                 continue
             rec = normalize_account(item, collection_time)
             if rec.get("accountid"):
                 records.append(sparse_record(rec))
+                acc_emitted += 1
+        if verbose_fetch:
+            _stderr_fetch_summary("accounts", len(account_items), acc_emitted)
 
     # --- Catalog (no incremental filter) ---
     if not args.skip_catalog:
-        for item in fetch_paginated(session, f"{api_base}products", ACTIVE_PRODUCT_FILTER, timeout):
+        product_items = fetch_paginated(session, f"{api_base}products", ACTIVE_PRODUCT_FILTER, timeout)
+        prod_emitted = 0
+        for item in product_items:
             if not isinstance(item, dict):
                 continue
             rec = normalize_product(item, collection_time)
             if rec.get("productid"):
                 records.append(sparse_record(rec))
+                prod_emitted += 1
+        if verbose_fetch:
+            _stderr_fetch_summary("products", len(product_items), prod_emitted)
 
-        for item in fetch_paginated(session, f"{api_base}pricelevels", None, timeout):
+        pl_items = fetch_paginated(session, f"{api_base}pricelevels", None, timeout)
+        pl_emitted = 0
+        for item in pl_items:
             if not isinstance(item, dict):
                 continue
             rec = normalize_pricelevel(item, collection_time)
             if rec.get("pricelevelid"):
                 records.append(sparse_record(rec))
+                pl_emitted += 1
+        if verbose_fetch:
+            _stderr_fetch_summary("pricelevels", len(pl_items), pl_emitted)
 
-        for item in fetch_paginated(session, f"{api_base}productpricelevels", None, timeout):
+        ppl_items = fetch_paginated(session, f"{api_base}productpricelevels", None, timeout)
+        ppl_emitted = 0
+        for item in ppl_items:
             if not isinstance(item, dict):
                 continue
             rec = normalize_productpricelevel(item, collection_time)
             if rec.get("productpricelevelid"):
                 records.append(sparse_record(rec))
+                ppl_emitted += 1
+        if verbose_fetch:
+            _stderr_fetch_summary("productpricelevels", len(ppl_items), ppl_emitted)
 
     # --- Realized sales: Fulfilled/Invoiced salesorders + expanded line items ---
     if not args.skip_sales:
         so_filter = build_salesorder_odata_filter(since_filter, args.include_active_orders)
         expand_params = {"$expand": SALESORDER_EXPAND_ORDER_DETAILS}
-        for item in fetch_paginated(
+        sales_items = fetch_paginated(
             session, f"{api_base}salesorders", so_filter, timeout, extra_params=expand_params
-        ):
+        )
+        sales_emitted = 0
+        for item in sales_items:
             if not isinstance(item, dict):
                 continue
             order_lines = item.get("order_details")
@@ -615,6 +685,7 @@ def main() -> None:
             so_rec = normalize_salesorder(item, collection_time)
             if so_rec.get("salesorderid"):
                 records.append(sparse_record(so_rec))
+                sales_emitted += 1
             so_id = normalize_string(item.get("salesorderid"))
             if isinstance(order_lines, list):
                 for line in order_lines:
@@ -626,6 +697,11 @@ def main() -> None:
                     det_rec = normalize_salesorderdetail(detail_raw, collection_time)
                     if det_rec.get("salesorderdetailid"):
                         records.append(sparse_record(det_rec))
+                        sales_emitted += 1
+        if verbose_fetch:
+            _stderr_fetch_summary("salesorders+expanded_lines", len(sales_items), sales_emitted)
+
+    _stderr_emit_histogram(records, verbose=verbose_fetch)
 
     sys.stdout.write(json.dumps(records, ensure_ascii=False))
     sys.stdout.flush()
